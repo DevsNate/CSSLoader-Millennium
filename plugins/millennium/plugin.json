@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/SteamClientHomebrew/Millennium/main/src/sys/plugin-schema.json",
+  "name": "css-loader-runtime",
+  "common_name": "CSS Loader Runtime",
+  "description": "Live-syncs the generated CSS Loader theme, including Steam's isolated side-menu views.",
+  "version": "0.1.0",
+  "backendType": "lua",
+  "frontend": "frontend",
+  "backend": "backend",
+  "useBackend": true
+}

@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  windows-installer:
+    name: Windows MSI
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: runtime/backend/requirements*.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            plugins/millennium/package-lock.json
+            apps/desktop/package-lock.json
+      - name: Install Python dependencies
+        run: python -m pip install -r runtime/backend/requirements-dev.txt
+      - name: Install JavaScript dependencies
+        shell: pwsh
+        run: |
+          npm ci --prefix plugins/millennium
+          npm ci --prefix apps/desktop
+      - name: Build installer
+        run: npm run build:release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: css-loader-for-millennium-msi
+          path: apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+          if-no-files-found: error
+      - name: Publish tagged release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: gh release create $env:GITHUB_REF_NAME apps/desktop/src-tauri/target/release/bundle/msi/*.msi --generate-notes --verify-tag

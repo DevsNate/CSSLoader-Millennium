@@ -1,0 +1,8 @@
+$ErrorActionPreference = "Stop"
+$repoRoot = Split-Path -Parent $PSScriptRoot
+$desktopRoot = Join-Path $repoRoot "apps\desktop"
+$syncScript = Join-Path $desktopRoot "scripts\sync-backend.ps1"
+$backend = Join-Path $repoRoot "runtime\backend\dist\CssLoader-Standalone-Headless.exe"
+$plugin = Join-Path $repoRoot "plugins\millennium"
+
+& $syncScript -BackendPath $backend -PluginPath $plugin

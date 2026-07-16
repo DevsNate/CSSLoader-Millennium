@@ -1,0 +1,33 @@
+# Python
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+runtime/backend/build/
+runtime/backend/dist/
+
+# Node / frontend builds
+**/node_modules/
+*.tsbuildinfo
+apps/desktop/.next/
+apps/desktop/out/
+plugins/millennium/.millennium/Dist/
+
+# Rust / Tauri generated resources
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/resources/
+
+# Local verification captures. These may contain installed third-party themes
+# and machine-specific paths; only the sanitized reports are versioned.
+decky-reference/
+fixtures/parity/generated/
+
+# Editors, operating systems, and local configuration
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
+.env
+.env.*
+!.env.example

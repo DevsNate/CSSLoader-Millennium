@@ -1,0 +1,25 @@
+{
+  "type": "module",
+  "name": "@millennium-css-loader/companion",
+  "version": "0.1.0",
+  "description": "Millennium runtime companion for the CSS Loader generated theme.",
+  "author": "Nate and contributors",
+  "license": "GPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DevsNate/millennium-css-loader.git",
+    "directory": "plugins/millennium"
+  },
+  "main": "./frontend/index.jsx",
+  "scripts": {
+    "build": "millennium-ttc --build prod"
+  },
+  "devDependencies": {
+    "@steambrew/api": "^5.8.4",
+    "@steambrew/client": "^5.8.4",
+    "@steambrew/ttc": "^3.2.6",
+    "@types/react": "19.1.1",
+    "@types/react-dom": "19.1.1",
+    "typescript": "^5.9.3"
+  }
+}
