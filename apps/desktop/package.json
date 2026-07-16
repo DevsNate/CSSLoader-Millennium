@@ -7,7 +7,7 @@
   "license": "GPL-3.0-only",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DevsNate/css-loader-for-millennium.git",
+    "url": "git+https://github.com/DevsNate/CSS-Loader-for-Millennium.git",
     "directory": "apps/desktop"
   },
   "scripts": {

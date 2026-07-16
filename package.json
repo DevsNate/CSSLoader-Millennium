@@ -6,7 +6,7 @@
   "license": "GPL-3.0-only",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DevsNate/css-loader-for-millennium.git"
+    "url": "git+https://github.com/DevsNate/CSS-Loader-for-Millennium.git"
   },
   "scripts": {
     "build:backend": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/build-backend.ps1",

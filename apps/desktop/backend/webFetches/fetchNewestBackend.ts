@@ -1,7 +1,7 @@
 import { fetch } from "@tauri-apps/api/http";
 export async function fetchNewestBackend() {
   return await fetch<any>(
-    "https://api.github.com/repos/DevsNate/css-loader-for-millennium/releases/latest"
+    "https://api.github.com/repos/DevsNate/CSS-Loader-for-Millennium/releases/latest"
   )
     .then((res) => {
       return res.data;
