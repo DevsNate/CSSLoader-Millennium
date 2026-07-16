@@ -13,7 +13,7 @@ if (-not $Python) {
 
 Push-Location $backendRoot
 try {
-  & $Python -m PyInstaller --noconfirm "CssLoader-Standalone-Headless.spec"
+  & $Python -m PyInstaller --noconfirm "CSS-Loader-for-Millennium-Backend.spec"
   if ($LASTEXITCODE -ne 0) {
     throw "PyInstaller failed with exit code $LASTEXITCODE"
   }
@@ -21,7 +21,7 @@ try {
   Pop-Location
 }
 
-$artifact = Join-Path $backendRoot "dist\CssLoader-Standalone-Headless.exe"
+$artifact = Join-Path $backendRoot "dist\CSS Loader for Millennium Backend.exe"
 if (-not (Test-Path -LiteralPath $artifact -PathType Leaf)) {
   throw "Backend build completed without producing $artifact"
 }

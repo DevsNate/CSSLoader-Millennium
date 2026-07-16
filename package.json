@@ -1,12 +1,12 @@
 {
-  "name": "millennium-css-loader",
-  "version": "0.1.1",
+  "name": "css-loader-for-millennium",
+  "version": "0.2.0",
   "private": true,
   "description": "A CSS Loader overlay runtime and desktop manager for Millennium on Windows.",
   "license": "GPL-3.0-only",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DevsNate/millennium-css-loader.git"
+    "url": "git+https://github.com/DevsNate/css-loader-for-millennium.git"
   },
   "scripts": {
     "build:backend": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/build-backend.ps1",
@@ -14,6 +14,7 @@
     "install:plugin": "powershell -NoProfile -ExecutionPolicy Bypass -File ./tools/install/install_millennium_plugin.ps1",
     "sync:desktop": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/sync-desktop.ps1",
     "build:release": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/build-release.ps1",
+    "verify:versions": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify-versions.ps1",
     "verify": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify.ps1"
   },
   "engines": {

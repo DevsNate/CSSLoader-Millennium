@@ -135,6 +135,8 @@ def _atomic_write(path: Path, content: str) -> None:
 def _copy_theme_sources(loader: Loader, themes_root: Path, output_root: Path) -> list[str]:
     copied = []
     destination_root = output_root / "assets" / "themes"
+    if destination_root.exists():
+        shutil.rmtree(destination_root)
     destination_root.mkdir(parents=True, exist_ok=True)
 
     for theme in sorted((theme for theme in loader.themes if theme.enabled), key=lambda item: item.name.lower()):
@@ -200,6 +202,7 @@ def compile_millennium_theme(
     content_hash = hashlib.sha256()
     generated_root = output_root / "generated"
     generated_root.mkdir(parents=True, exist_ok=True)
+    expected_bundle_names = {f"{target.key}.css" for target in bundles}
 
     for target in sorted(bundles, key=lambda item: item.key):
         relative_path = f"generated/{target.key}.css"
@@ -225,7 +228,7 @@ def compile_millennium_theme(
             "Generated CSS Loader asset host. Leave your preferred Millennium theme selected "
             "for overlay mode, or select this theme for CSS Loader-only mode."
         ),
-        "version": "0.1.1",
+        "version": "0.2.0",
         "Patches": patches,
     }
     _atomic_write(output_root / "skin.json", json.dumps(skin, indent=2) + "\n")
@@ -243,6 +246,14 @@ def compile_millennium_theme(
         "patches": patches,
     }
     _atomic_write(output_root / "build-report.json", json.dumps(report, indent=2) + "\n")
+
+    # The build report is the source of truth used by the companion. Remove
+    # bundles from older profiles only after publishing the new report so a
+    # running Steam session never observes a report that references a deleted
+    # file.
+    for existing_bundle in generated_root.glob("*.css"):
+        if existing_bundle.name not in expected_bundle_names:
+            existing_bundle.unlink()
     Log(
         f"Generated Millennium theme '{THEME_NAME}' with "
         f"{selected_injects} selected injects across {len(bundles)} target bundles"

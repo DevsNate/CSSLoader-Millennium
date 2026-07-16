@@ -6,6 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import {
   checkIfStandaloneBackendExists,
   dummyFunction,
+  ensureInstallation,
   reloadBackend,
   startBackend,
   recursiveCheck,
@@ -30,6 +31,7 @@ export default function App(AppProps: AppProps) {
   // This is now undefined before the initial check, that way things can use dummyResult !== undefined to see if the app has properly loaded
   const [dummyResult, setDummyResult] = useState<boolean | undefined>(undefined);
   const [backendExists, setBackendExists] = useState<boolean>(false);
+  const [installationChecked, setInstallationChecked] = useState<boolean>(false);
   const [newBackendVersion, setNewBackend] = useState<string>("");
   const [showNewBackendPage, setShowNewBackend] = useState<boolean>(false);
   const [backendManifestVersion, setManifestVersion] = useState<number>(8);
@@ -68,9 +70,25 @@ export default function App(AppProps: AppProps) {
 
   useEffect(() => {
     if (!OS) return;
-    if (isWindows) void refreshBackendExists();
-    void recheckDummy();
+    if (isWindows) {
+      void initializeWindowsInstallation();
+    } else {
+      void recheckDummy();
+    }
   }, [OS, isWindows]);
+
+  async function initializeWindowsInstallation() {
+    try {
+      await ensureInstallation();
+    } catch {
+      // The setup modal remains visible and exposes a retry with the full
+      // error message. This commonly means Millennium has not been started
+      // once yet and therefore has no config file.
+    }
+    await refreshBackendExists();
+    setInstallationChecked(true);
+    await recheckDummy();
+  }
 
   async function recheckDummy() {
     recursiveCheck(
@@ -127,6 +145,7 @@ export default function App(AppProps: AppProps) {
         value={{
           dummyResult,
           backendExists,
+          installationChecked,
           showNewBackendPage,
           newBackendVersion,
           recheckDummy,

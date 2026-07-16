@@ -9,6 +9,8 @@ $desktopRoot = Join-Path $repoRoot "apps\desktop"
 $venvPython = Join-Path $repoRoot ".venv\Scripts\python.exe"
 $python = if (Test-Path -LiteralPath $venvPython -PathType Leaf) { $venvPython } else { "python" }
 
+& (Join-Path $PSScriptRoot "verify-versions.ps1")
+
 Push-Location $backendRoot
 try {
   & $python -m unittest discover -s tests -v

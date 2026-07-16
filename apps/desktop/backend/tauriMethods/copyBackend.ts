@@ -5,6 +5,6 @@ export async function copyBackend(backendPath: string) {
     "-Path",
     backendPath,
     "-Destination",
-    "([Environment]::GetFolderPath('Startup') + '\\CssLoader-Standalone-Headless.exe')",
+    "([Environment]::GetFolderPath('Startup') + '\\CSS Loader for Millennium Backend.exe')",
   ]);
 }

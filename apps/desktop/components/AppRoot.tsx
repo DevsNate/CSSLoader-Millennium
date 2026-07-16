@@ -18,6 +18,7 @@ export function AppRoot({ Component, pageProps }: AppProps) {
   const {
     dummyResult,
     backendExists,
+    installationChecked,
     showNewBackendPage,
     newBackendVersion,
     setNewBackend,
@@ -75,7 +76,7 @@ export function AppRoot({ Component, pageProps }: AppProps) {
                 : "page-shadow ml-4 mt-4 mb-4 rounded-3xl border-[1px] border-borders-base3-light bg-base-2-light dark:border-borders-base1-dark dark:bg-base-2-dark"
             }`}
           >
-            {isWindows && (showNewBackendPage || !backendExists) && (
+            {isWindows && installationChecked && (showNewBackendPage || !backendExists) && (
               <DownloadBackendPage
                 onboarding={!backendExists}
                 onUpdateFinish={onUpdateFinish}

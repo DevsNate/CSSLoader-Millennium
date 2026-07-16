@@ -1,4 +1,5 @@
 from logging import getLogger
+import getpass
 import os, platform, traceback
 import psutil
 
@@ -13,10 +14,9 @@ DECKY_HOME = os.getenv("DECKY_HOME", os.path.join(HOME, "homebrew"))
 DECKY_USER = os.getenv("DECKY_USER")
 
 if not DECKY_USER:
-    DECKY_USER = os.getlogin()
+    DECKY_USER = os.getenv("USERNAME") or os.getenv("USER") or getpass.getuser()
 
-if not os.path.exists(DECKY_HOME):
-    os.mkdir(DECKY_HOME)
+os.makedirs(DECKY_HOME, exist_ok=True)
 
 PLATFORM_WIN = platform.system() == "Windows"
 
@@ -50,10 +50,7 @@ class Result:
         return {"success": self.success, "message": self.message}
 
 def create_dir(dirPath : str):
-    if (os.path.exists(dirPath)):
-        return
-
-    os.mkdir(dirPath)
+    os.makedirs(dirPath, exist_ok=True)
 
     if not PLATFORM_WIN:
         a = pwd.getpwnam(DECKY_USER)

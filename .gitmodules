@@ -1,0 +1,3 @@
+[submodule "css-loader-companion-for-millennium"]
+	path = plugins/millennium
+	url = https://github.com/DevsNate/css-loader-companion-for-millennium.git

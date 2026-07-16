@@ -89,7 +89,7 @@
         "scope": [
           "http://127.0.0.1:35821/req",
           "https://api.deckthemes.com/*",
-          "https://api.github.com/repos/DevsNate/millennium-css-loader/*"
+          "https://api.github.com/repos/DevsNate/css-loader-for-millennium/*"
         ]
       }
     },
@@ -119,8 +119,8 @@
         "signingIdentity": null
       },
       "resources": [
-        "resources/CssLoader-Standalone-Headless.exe",
-        "resources/css-loader-runtime"
+        "resources/CSS Loader for Millennium Backend.exe",
+        "resources/css-loader-companion"
       ],
       "shortDescription": "CSS Loader overlay compatibility for Millennium",
       "targets": ["msi"],

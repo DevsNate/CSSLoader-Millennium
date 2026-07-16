@@ -451,8 +451,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "css-loader-millennium"
-version = "0.1.1"
+name = "css-loader-for-millennium"
+version = "0.2.0"
 dependencies = [
  "directories",
  "home",

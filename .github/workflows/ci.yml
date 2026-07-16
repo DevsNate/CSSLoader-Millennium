@@ -17,6 +17,8 @@ jobs:
         working-directory: runtime/backend
     steps:
       - uses: actions/checkout@v7
+        with:
+          submodules: recursive
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
@@ -34,6 +36,8 @@ jobs:
         working-directory: plugins/millennium
     steps:
       - uses: actions/checkout@v7
+        with:
+          submodules: recursive
       - uses: actions/setup-node@v7
         with:
           node-version: 20
@@ -50,6 +54,8 @@ jobs:
         working-directory: apps/desktop
     steps:
       - uses: actions/checkout@v7
+        with:
+          submodules: recursive
       - uses: actions/setup-node@v7
         with:
           node-version: 20

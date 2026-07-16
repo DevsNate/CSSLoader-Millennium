@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='CssLoader-Standalone',
+    name='CSS Loader for Millennium Backend Debug',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

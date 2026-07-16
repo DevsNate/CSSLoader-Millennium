@@ -1,5 +1,5 @@
 param(
-  [string]$BackendPath = "..\..\runtime\backend\dist\CssLoader-Standalone-Headless.exe",
+  [string]$BackendPath = "..\..\runtime\backend\dist\CSS Loader for Millennium Backend.exe",
   [string]$PluginPath = "..\..\plugins\millennium"
 )
 
@@ -15,14 +15,24 @@ function Resolve-ProjectPath([string]$PathValue) {
 $source = Resolve-ProjectPath $BackendPath
 $pluginSource = Resolve-ProjectPath $PluginPath
 $resourceDirectory = Join-Path $projectRoot "src-tauri\resources"
-$destination = Join-Path $resourceDirectory "CssLoader-Standalone-Headless.exe"
-$pluginDestination = Join-Path $resourceDirectory "css-loader-runtime"
+$destination = Join-Path $resourceDirectory "CSS Loader for Millennium Backend.exe"
+$pluginDestination = Join-Path $resourceDirectory "css-loader-companion"
+$legacyBackendDestination = Join-Path $resourceDirectory "CssLoader-Standalone-Headless.exe"
+$legacyPluginDestination = Join-Path $resourceDirectory "css-loader-runtime"
 
 if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
   throw "Millennium backend was not found at $source"
 }
 
 New-Item -ItemType Directory -Path $resourceDirectory -Force | Out-Null
+
+if (Test-Path -LiteralPath $legacyBackendDestination -PathType Leaf) {
+  Remove-Item -LiteralPath $legacyBackendDestination -Force
+}
+if (Test-Path -LiteralPath $legacyPluginDestination -PathType Container) {
+  Remove-Item -LiteralPath $legacyPluginDestination -Recurse -Force
+}
+
 Copy-Item -LiteralPath $source -Destination $destination -Force
 
 $pluginFiles = @(

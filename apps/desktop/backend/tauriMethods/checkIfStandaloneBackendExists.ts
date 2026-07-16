@@ -1,13 +1,4 @@
-import {
-    BaseDirectory,
-    exists,
-  } from "@tauri-apps/api/fs";
 export async function checkIfStandaloneBackendExists() {
-    const backendExists = await exists(
-      "Microsoft\\Windows\\Start Menu\\Programs\\Startup\\CssLoader-Standalone-Headless.exe",
-      {
-        dir: BaseDirectory.Config,
-      }
-    );
-    return backendExists;
-  }
+  const { invoke } = await import("@tauri-apps/api");
+  return await invoke<boolean>("installation_complete", {});
+}

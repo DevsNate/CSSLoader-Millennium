@@ -1,11 +1,11 @@
 [package]
-name = "css-loader-millennium"
-version = "0.1.1"
+name = "css-loader-for-millennium"
+version = "0.2.0"
 description = "Desktop theme manager and installer for CSS Loader on Millennium"
 authors = ["Nate and contributors"]
 license = "GPL-3.0-only"
-repository = "https://github.com/DevsNate/millennium-css-loader"
-default-run = "css-loader-millennium"
+repository = "https://github.com/DevsNate/css-loader-for-millennium"
+default-run = "css-loader-for-millennium"
 edition = "2021"
 rust-version = "1.59"
 

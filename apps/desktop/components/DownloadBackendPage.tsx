@@ -17,7 +17,7 @@ export function DownloadBackendPage({
   const [installText, setInstallText] = useState<string>("");
   async function installBackend() {
     setInstallProg(1);
-    setInstallText("Installing Millennium Backend");
+    setInstallText("Installing CSS Loader components");
     try {
       await downloadBackend();
       setInstallProg(100);
@@ -34,16 +34,16 @@ export function DownloadBackendPage({
   return (
     <>
       <GenericInstallBackendModal
-        titleText={onboarding ? "Install CSS Loader's Millennium Backend" : "Backend Update Available"}
+        titleText={onboarding ? "Finish CSS Loader Setup" : "CSS Loader Update Available"}
         dontClose={installProg > 0 || onboarding}
         descriptionText={
           onboarding ? (
             <>
               <span>
-                Install the bundled backend to manage your existing CSS Loader themes and compile
-                them for the Millennium overlay runtime. Keep your preferred Millennium theme
-                selected; CSS Loader will layer on top of it. No external CDP port or Steam developer
-                mode is required.
+                CSS Loader will create your theme library, install its backend and Millennium
+                Companion, and generate the local overlay automatically. Keep your preferred
+                Millennium theme selected; CSS Loader layers on top of it. No external CDP port or
+                Steam developer mode is required.
               </span>
             </>
           ) : (

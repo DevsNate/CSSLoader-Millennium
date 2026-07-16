@@ -1,13 +1,13 @@
 {
-  "name": "@millennium-css-loader/desktop",
-  "version": "0.1.1",
+  "name": "@css-loader-for-millennium/desktop",
+  "version": "0.2.0",
   "private": true,
   "description": "Desktop theme manager and installer for CSS Loader on Millennium.",
   "author": "Nate and contributors",
   "license": "GPL-3.0-only",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DevsNate/millennium-css-loader.git",
+    "url": "git+https://github.com/DevsNate/css-loader-for-millennium.git",
     "directory": "apps/desktop"
   },
   "scripts": {

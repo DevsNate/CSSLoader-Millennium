@@ -6,7 +6,7 @@
     <a href="https://www.microsoft.com/windows"><img alt="Platform: Windows" src="https://img.shields.io/badge/platform-Windows-0078D4?logo=windows" /></a>
     <a href="https://github.com/SteamClientHomebrew/Millennium"><img alt="Runtime: Millennium" src="https://img.shields.io/badge/runtime-Millennium-171A21" /></a>
     <a href="LICENSE"><img alt="License: GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" /></a>
-    <a href="https://github.com/DevsNate/millennium-css-loader/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/DevsNate/millennium-css-loader/actions/workflows/ci.yml/badge.svg" /></a>
+    <a href="https://github.com/DevsNate/css-loader-for-millennium/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/DevsNate/css-loader-for-millennium/actions/workflows/ci.yml/badge.svg" /></a>
   </p>
 </div>
 
@@ -64,7 +64,11 @@ Millennium instead of waiting for a late external standalone injection pass.
   selected Millennium theme active beneath CSS Loader.
 - Produces **CSS Loader (Standalone)** as an optional CSS Loader-only theme and
   as the internal host for generated CSS and assets.
-- Bundles the backend and companion inside one desktop installer.
+- Bundles the backend and the separately maintained
+  [CSS Loader Companion for Millennium](https://github.com/DevsNate/css-loader-companion-for-millennium)
+  inside one desktop installer.
+- Bootstraps a new `%USERPROFILE%\homebrew\themes` library automatically; Decky
+  or a pre-existing CSS Loader installation is not required.
 - Reloads the generated theme when settings or watched CSS files change.
 - Keeps Desktop, Big Picture, Quick Access, Main Menu, and notification targets
   separate, matching CSS Loader's real document routing.
@@ -90,16 +94,24 @@ reference warning in [Compatibility verification](docs/verification.md).
 > setup; this Millennium-aware backend and its companion must be installed.
 
 1. Install Millennium and start Steam once so Millennium creates its config.
-2. Download the latest MSI from this repository's Releases page.
-3. Open **CSS Loader for Millennium** and choose **Install Millennium Backend**.
+2. Download and install the latest MSI from this repository's Releases page.
+3. Open **CSS Loader for Millennium**. First-run setup creates the theme library,
+   installs the backend and companion, and generates a valid empty overlay.
 4. Leave your preferred Millennium theme selected. The generated **CSS Loader
    (Standalone)** entry is optional and is only needed for CSS Loader-only mode.
 5. Restart Steam once, then manage themes, profiles, and every patch option from
    the desktop app.
 
 The installer places the backend in the current user's Windows Startup folder,
-copies the companion to Steam's Millennium plugin directory, and enables the
-plugin. Your installed themes remain in their existing CSS Loader directory.
+copies and enables the companion in Steam, and creates
+`%USERPROFILE%\homebrew\themes` when it does not exist. Your generated
+configuration stays active at Steam startup even while the desktop app and
+backend are closed.
+
+The local `Steam\millennium\themes\CSS Loader` folder is generated uniquely for
+each user. It is an asset host, not a separately published Marketplace theme.
+See [Clean installation](docs/clean-installation.md) for the complete first-run
+contract and migration behavior.
 
 ## Build from source
 
@@ -112,8 +124,8 @@ plugin. Your installed themes remain in their existing CSS Loader directory.
 - Millennium and Steam for end-to-end testing
 
 ```powershell
-git clone https://github.com/DevsNate/millennium-css-loader.git
-cd millennium-css-loader
+git clone --recurse-submodules https://github.com/DevsNate/css-loader-for-millennium.git
+cd css-loader-for-millennium
 
 python -m venv .venv
 .\.venv\Scripts\python -m pip install -r runtime/backend/requirements-dev.txt
@@ -133,7 +145,7 @@ available for `build:backend`, `build:plugin`, and `sync:desktop`.
 | Path | Purpose |
 | --- | --- |
 | `runtime/backend` | CSS Loader compatibility logic and generated-theme compiler |
-| `plugins/millennium` | In-process overlay and isolated BrowserView live-sync companion |
+| `plugins/millennium` | Pinned [CSS Loader Companion for Millennium](https://github.com/DevsNate/css-loader-companion-for-millennium) submodule used for MSI builds |
 | `apps/desktop` | Tauri theme manager and bundled installer |
 | `tools/audit` | Reference capture, parity, and Steam class-map auditing |
 | `docs` | Architecture and verification methodology |
@@ -151,6 +163,13 @@ and exact option that differs. See [Contributing](CONTRIBUTING.md).
 Themes are third-party content and are not bundled here. Each theme remains
 under its author's license. This repository is derived from the CSS Loader
 runtime and desktop projects; see [Attribution and provenance](NOTICE.md).
+
+## Project repositories
+
+| Repository | Purpose |
+| --- | --- |
+| [`css-loader-for-millennium`](https://github.com/DevsNate/css-loader-for-millennium) | Desktop app, CSS Loader-compatible backend, installer, compiler, and verification |
+| [`css-loader-companion-for-millennium`](https://github.com/DevsNate/css-loader-companion-for-millennium) | Millennium Marketplace plugin that applies the generated output inside Steam |
 
 ## License
 

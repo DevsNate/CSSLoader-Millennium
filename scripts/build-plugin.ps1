@@ -6,6 +6,10 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $pluginRoot = Join-Path $repoRoot "plugins\millennium"
 
+if (-not (Test-Path -LiteralPath (Join-Path $pluginRoot "package.json") -PathType Leaf)) {
+  throw "CSS Loader Companion is not initialized. Run: git submodule update --init"
+}
+
 Push-Location $pluginRoot
 try {
   if ($CleanInstall -or -not (Test-Path -LiteralPath "node_modules" -PathType Container)) {

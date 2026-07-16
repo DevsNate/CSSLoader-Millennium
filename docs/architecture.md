@@ -40,7 +40,10 @@ Loader-only presentation.
 
 ## Millennium companion
 
-`plugins/millennium` is the primary overlay runtime. It synchronizes Desktop
+The separately maintained
+[CSS Loader Companion for Millennium](https://github.com/DevsNate/css-loader-companion-for-millennium),
+pinned into this repository at `plugins/millennium` for release builds, is the
+primary overlay runtime. It synchronizes Desktop
 and Big Picture directly inside Steam, then reaches Quick Access, Main Menu,
 and notification toasts through Millennium's per-plugin Chrome DevTools
 Protocol proxy because those targets live in isolated BrowserViews.
@@ -58,6 +61,12 @@ enabling the companion plugin. Installation only enables the companion and
 preserves `themes.activeTheme`, making overlay mode the default. Release builds
 embed both runtime artifacts so the installer does not replace them with an
 unrelated upstream backend.
+
+On a clean machine, first launch is an idempotent bootstrap: it creates the
+theme library, copies the backend, installs or migrates the companion, preserves
+the selected Millennium theme, and then starts the compiler. The generated
+Millennium theme folder is user-specific runtime output and is not published as
+a theme repository.
 
 ## Data flow and ordering
 

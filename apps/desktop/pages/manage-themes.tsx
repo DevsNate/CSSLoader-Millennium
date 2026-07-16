@@ -2,6 +2,7 @@ import { themeContext } from "@contexts/themeContext";
 import { useContext, useEffect, useState } from "react";
 import { Flags, MinimalCSSThemeInfo, Theme } from "../ThemeTypes";
 import { deleteTheme, downloadThemeFromUrl, toast } from "../backend";
+import { ensureThemeLibrary } from "../backend/tauriMethods";
 import { bulkThemeUpdateCheck } from "../logic";
 import { ManageThemeCard, YourProfilesList } from "../components";
 import { BiFolderOpen } from "react-icons/bi";
@@ -45,10 +46,8 @@ export default function ManageThemes() {
           className="flex w-fit items-center justify-center gap-2 rounded-full border-2 border-[#2e2e2e] bg-[#2563eb] px-4 py-2 text-sm font-bold transition duration-100 focus-visible:ring-4 focus-visible:ring-amber9"
           onClick={async () => {
             // These have to be async imported here as otherwise NextJS tries to "SSR" them and it errors
-            const { homeDir, join } = await import("@tauri-apps/api/path");
             const { open } = await import("@tauri-apps/api/shell");
-            const userDir = await homeDir();
-            const path = await join(userDir, "homebrew", "themes");
+            const path = await ensureThemeLibrary();
             open(path);
           }}
         >

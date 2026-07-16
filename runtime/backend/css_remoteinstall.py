@@ -20,7 +20,7 @@ async def install(id : str, base_url : str, local_themes : list) -> Result:
     url = f"{base_url}themes/{id}"
 
     tls_context = ssl.create_default_context(cafile=certifi.where())
-    async with aiohttp.ClientSession(headers={"User-Agent": f"millennium-css-loader/{CSS_LOADER_VER}"}, connector=aiohttp.TCPConnector(ssl=tls_context)) as session:
+    async with aiohttp.ClientSession(headers={"User-Agent": f"css-loader-for-millennium/{CSS_LOADER_VER}"}, connector=aiohttp.TCPConnector(ssl=tls_context)) as session:
         try:
             async with session.get(url) as resp:
                 if resp.status != 200:
@@ -81,7 +81,7 @@ async def upload(theme : Theme, base_url : str, bearer_token : str) -> Result:
 
         with open(themePath, "rb") as file:
             tls_context = ssl.create_default_context(cafile=certifi.where())
-            async with aiohttp.ClientSession(headers={"User-Agent": f"millennium-css-loader/{CSS_LOADER_VER}", "Authorization": f"Bearer {bearer_token}"}, connector=aiohttp.TCPConnector(ssl=tls_context)) as session:
+            async with aiohttp.ClientSession(headers={"User-Agent": f"css-loader-for-millennium/{CSS_LOADER_VER}", "Authorization": f"Bearer {bearer_token}"}, connector=aiohttp.TCPConnector(ssl=tls_context)) as session:
                 try:
                     mp = aiohttp.FormData()
                     mp.add_field("file", file)

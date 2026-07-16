@@ -144,6 +144,33 @@ class MillenniumCompilerTests(unittest.TestCase):
             ALL_INJECTS.clear()
             ALL_INJECTS.extend(previous_injects)
 
+    def test_regeneration_removes_disabled_theme_assets_and_stale_bundles(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            themes_root = Path(temporary) / "themes"
+            output_root = Path(temporary) / "output"
+            old_theme_assets = output_root / "assets" / "themes" / "Old Theme"
+            old_theme_assets.mkdir(parents=True)
+            (old_theme_assets / "old.png").write_bytes(b"old")
+            generated_root = output_root / "generated"
+            generated_root.mkdir(parents=True)
+            (generated_root / "desktop.css").write_text("old", encoding="utf-8")
+
+            previous_injects = list(ALL_INJECTS)
+            try:
+                ALL_INJECTS.clear()
+                report = compile_millennium_theme(
+                    SimpleNamespace(themes=[]),
+                    output_root=output_root,
+                    themes_root=themes_root,
+                )
+            finally:
+                ALL_INJECTS.clear()
+                ALL_INJECTS.extend(previous_injects)
+
+            self.assertEqual(report["bundles"], {})
+            self.assertFalse(old_theme_assets.exists())
+            self.assertFalse((generated_root / "desktop.css").exists())
+
 
 class MillenniumProfileTests(unittest.IsolatedAsyncioTestCase):
     async def test_profile_change_publishes_only_the_final_state(self):
