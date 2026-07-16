@@ -7,12 +7,12 @@ from css_millennium import build_from_disk, default_millennium_theme_path
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Build the Millennium CSS Loader theme from existing CSSLoader themes.")
+    parser = argparse.ArgumentParser(description="Build the Millennium CSS Loader overlay from existing CSSLoader themes.")
     parser.add_argument(
         "--output",
         type=Path,
         default=default_millennium_theme_path(),
-        help="Destination for the generated Millennium theme.",
+        help="Destination for the generated Millennium CSS and asset host.",
     )
     args = parser.parse_args()
     report = asyncio.run(build_from_disk(args.output))

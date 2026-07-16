@@ -41,9 +41,9 @@ export function DownloadBackendPage({
             <>
               <span>
                 Install the bundled backend to manage your existing CSS Loader themes and compile
-                them into the Millennium theme named CSS Loader. No external CDP port or Steam
-                developer mode is required; the companion uses Millennium&apos;s own API for isolated
-                side-menu views.
+                them for the Millennium overlay runtime. Keep your preferred Millennium theme
+                selected; CSS Loader will layer on top of it. No external CDP port or Steam developer
+                mode is required.
               </span>
             </>
           ) : (

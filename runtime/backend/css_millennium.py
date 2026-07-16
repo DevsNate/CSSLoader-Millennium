@@ -13,6 +13,8 @@ from css_utils import Log, get_steam_path, get_theme_path
 
 
 THEME_NAME = "CSS Loader"
+THEME_DISPLAY_NAME = "CSS Loader (Standalone)"
+RUNTIME_MODE = "overlay"
 
 
 @dataclass(frozen=True)
@@ -217,16 +219,21 @@ def compile_millennium_theme(
         }
 
     skin = {
-        "name": THEME_NAME,
+        "name": THEME_DISPLAY_NAME,
         "author": "CSS Loader contributors",
-        "description": "Generated Millennium runtime for existing CSS Loader themes and configuration.",
-        "version": "0.1.0",
+        "description": (
+            "Generated CSS Loader asset host. Leave your preferred Millennium theme selected "
+            "for overlay mode, or select this theme for CSS Loader-only mode."
+        ),
+        "version": "0.1.1",
         "Patches": patches,
     }
     _atomic_write(output_root / "skin.json", json.dumps(skin, indent=2) + "\n")
 
     report = {
         "theme": THEME_NAME,
+        "themeDisplayName": THEME_DISPLAY_NAME,
+        "runtimeMode": RUNTIME_MODE,
         "output": str(output_root),
         "enabledThemes": [theme.name for theme in loader.themes if theme.enabled],
         "copiedThemeFolders": copied_themes,

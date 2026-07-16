@@ -1,6 +1,6 @@
 {
   "name": "@millennium-css-loader/desktop",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Desktop theme manager and installer for CSS Loader on Millennium.",
   "author": "Nate and contributors",

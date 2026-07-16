@@ -110,7 +110,7 @@
       ],
       "identifier": "io.github.devsnate.cssloader.millennium",
       "publisher": "DevsNate",
-      "longDescription": "Manage existing CSS Loader themes and compile them into a persistent Millennium theme for Steam on Windows.",
+      "longDescription": "Manage existing CSS Loader themes and layer them over the selected Millennium theme on Steam for Windows.",
       "macOS": {
         "entitlements": null,
         "exceptionDomain": "",
@@ -122,7 +122,7 @@
         "resources/CssLoader-Standalone-Headless.exe",
         "resources/css-loader-runtime"
       ],
-      "shortDescription": "CSS Loader compatibility for Millennium",
+      "shortDescription": "CSS Loader overlay compatibility for Millennium",
       "targets": ["msi"],
       "windows": {
         "certificateThumbprint": null,

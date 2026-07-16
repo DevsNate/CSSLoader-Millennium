@@ -143,6 +143,8 @@ fn install_companion_plugin(app: &tauri::AppHandle) -> Result<(), String> {
     .map_err(|error| format!("Cannot read Millennium config: {}", error))?;
   let mut config: serde_json::Value = serde_json::from_str(&config_text)
     .map_err(|error| format!("Cannot parse Millennium config: {}", error))?;
+  // Overlay mode must never replace the user's selected Millennium theme.
+  let active_theme_before = config.pointer("/themes/activeTheme").cloned();
   let enabled_plugins = config
     .pointer_mut("/plugins/enabledPlugins")
     .and_then(serde_json::Value::as_array_mut)
@@ -156,6 +158,9 @@ fn install_companion_plugin(app: &tauri::AppHandle) -> Result<(), String> {
     fs::copy(&config_path, backup_path)
       .map_err(|error| format!("Cannot back up Millennium config: {}", error))?;
     enabled_plugins.push(serde_json::Value::String(String::from("css-loader-runtime")));
+    if config.pointer("/themes/activeTheme") != active_theme_before.as_ref() {
+      return Err(String::from("Refusing to change Millennium's active theme"));
+    }
     let updated = serde_json::to_string_pretty(&config)
       .map_err(|error| format!("Cannot serialize Millennium config: {}", error))?;
     fs::write(&config_path, updated + "\n")

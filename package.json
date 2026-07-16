@@ -1,8 +1,8 @@
 {
   "name": "millennium-css-loader",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
-  "description": "A CSS Loader compatibility runtime and desktop manager for Millennium on Windows.",
+  "description": "A CSS Loader overlay runtime and desktop manager for Millennium on Windows.",
   "license": "GPL-3.0-only",
   "repository": {
     "type": "git",

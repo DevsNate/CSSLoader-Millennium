@@ -36,20 +36,21 @@ colors, components, class translations, and activation order.
 | Stock CSS Loader path | Millennium-compatible replacement |
 | --- | --- |
 | Creates `.cef-enable-remote-debugging` | Does not create or depend on the marker |
-| Requires an externally reachable CDP port | Compiles the selected state into a persistent Millennium theme |
+| Requires an externally reachable CDP port | Compiles the selected state into persistent CSS bundles |
 | Needs Millennium's `-dev` mode to expose that port | Works with Millennium's normal runtime mode |
-| Injects every Steam document through external CDP | Uses Millennium patches plus its controlled per-plugin CDP proxy for isolated BrowserViews |
+| Injects every Steam document through external CDP | Uses an in-process Millennium overlay plus its controlled per-plugin CDP proxy for isolated BrowserViews |
 
-Quick Access, Main Menu, and notifications live in separate Steam BrowserViews.
-The companion keeps those targets synchronized through Millennium's own
-isolated plugin API. It does not expose an external CDP port, recreate the
-`.cef` marker, require Millennium `-dev` mode, or run a separate browser bridge.
+The companion layers CSS Loader over whichever Millennium theme is selected.
+Desktop and Big Picture are synchronized directly inside Steam; Quick Access,
+Main Menu, and notifications use Millennium's isolated per-plugin API because
+they live in separate BrowserViews. The runtime does not expose an external CDP
+port, recreate the `.cef` marker, require Millennium `-dev` mode, or run a
+separate browser bridge.
 
 Eliminating the delayed theming flash is an additional benefit of this design,
 not the entire purpose of the project. The compatibility runtime persists the
-last compiled configuration as a regular Millennium theme, allowing the main
-Steam and Big Picture styles to preload during startup instead of waiting for a
-late standalone injection pass.
+last compiled configuration on disk, and its companion starts as part of
+Millennium instead of waiting for a late external standalone injection pass.
 
 ## Highlights
 
@@ -59,7 +60,10 @@ late standalone injection pass.
 - Uses existing themes from `~/homebrew/themes`; no manual conversion required.
 - Preserves profiles, dependencies, patch options, colors, CSS variables, local
   images/fonts, class translations, and CSS cascade order.
-- Produces a single visible Millennium theme: **CSS Loader**.
+- Defaults to overlay mode, keeping Fluenty, SpaceTheme, Pebble, or another
+  selected Millennium theme active beneath CSS Loader.
+- Produces **CSS Loader (Standalone)** as an optional CSS Loader-only theme and
+  as the internal host for generated CSS and assets.
 - Bundles the backend and companion inside one desktop installer.
 - Reloads the generated theme when settings or watched CSS files change.
 - Keeps Desktop, Big Picture, Quick Access, Main Menu, and notification targets
@@ -88,9 +92,10 @@ reference warning in [Compatibility verification](docs/verification.md).
 1. Install Millennium and start Steam once so Millennium creates its config.
 2. Download the latest MSI from this repository's Releases page.
 3. Open **CSS Loader for Millennium** and choose **Install Millennium Backend**.
-4. In Millennium, select the theme named **CSS Loader** if it is not already
-   active, then restart Steam once.
-5. Manage themes, profiles, and every patch option from the desktop app.
+4. Leave your preferred Millennium theme selected. The generated **CSS Loader
+   (Standalone)** entry is optional and is only needed for CSS Loader-only mode.
+5. Restart Steam once, then manage themes, profiles, and every patch option from
+   the desktop app.
 
 The installer places the backend in the current user's Windows Startup folder,
 copies the companion to Steam's Millennium plugin directory, and enables the
@@ -128,7 +133,7 @@ available for `build:backend`, `build:plugin`, and `sync:desktop`.
 | Path | Purpose |
 | --- | --- |
 | `runtime/backend` | CSS Loader compatibility logic and generated-theme compiler |
-| `plugins/millennium` | Isolated BrowserView live-sync companion |
+| `plugins/millennium` | In-process overlay and isolated BrowserView live-sync companion |
 | `apps/desktop` | Tauri theme manager and bundled installer |
 | `tools/audit` | Reference capture, parity, and Steam class-map auditing |
 | `docs` | Architecture and verification methodology |

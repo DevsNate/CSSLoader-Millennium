@@ -15,12 +15,13 @@ flowchart LR
   T["Existing CSS Loader themes"] --> R["Python compatibility runtime"]
   C["Profiles and patch settings"] --> R
   M["Steam class translations"] --> R
-  R --> G["Generated Millennium theme: CSS Loader"]
-  G --> D["Desktop and Big Picture preload"]
-  R --> P["Millennium companion"]
+  R --> G["Generated CSS bundles and asset host"]
+  G --> P["Millennium overlay companion"]
+  P --> D["Desktop and Big Picture"]
   P --> I["Quick Access, Main Menu, notifications"]
+  S["Selected Millennium theme"] --> D
+  S --> I
   A["Desktop manager"] --> R
-  A --> P
 ```
 
 ## Runtime compiler
@@ -28,28 +29,35 @@ flowchart LR
 `runtime/backend` retains CSS Loader's manifest reader, dependency handling,
 patch components, profiles, class translation, and theme-store integration. It
 compiles enabled payloads in activation order, rewrites local asset URLs, and
-writes a normal Millennium theme named **CSS Loader**.
+writes a Millennium-served asset host whose optional selector entry is named
+**CSS Loader (Standalone)**.
 
-The generated theme is persisted on disk. Millennium can therefore load its
-main Desktop and Big Picture CSS during Steam startup without waiting for the
-desktop manager or a late browser injection pass.
+The generated bundles are persisted on disk, so the desktop manager does not
+need to be running when Steam starts. Overlay mode leaves the user's selected
+Millennium theme untouched and layers the last compiled CSS Loader state over
+it. Selecting **CSS Loader (Standalone)** remains available for a CSS
+Loader-only presentation.
 
 ## Millennium companion
 
-Steam renders Quick Access, Main Menu, and notification toasts in isolated
-BrowserViews. `plugins/millennium` live-syncs only those isolated targets using
-Millennium's per-plugin Chrome DevTools Protocol proxy.
+`plugins/millennium` is the primary overlay runtime. It synchronizes Desktop
+and Big Picture directly inside Steam, then reaches Quick Access, Main Menu,
+and notification toasts through Millennium's per-plugin Chrome DevTools
+Protocol proxy because those targets live in isolated BrowserViews.
 
 This is not an external CDP setup: the project does not open port 8080, require
 Millennium `-dev` mode, or run a separate browser bridge. The generated theme
-remains the primary runtime and startup path.
+directory is a persistent content host; it does not need to be the active
+Millennium theme.
 
 ## Desktop manager
 
 `apps/desktop` is a Tauri application for browsing installed themes, changing
 profiles and patch settings, installing the bundled backend, and installing or
-enabling the companion plugin. Release builds embed both runtime artifacts so
-the installer does not replace them with an unrelated upstream backend.
+enabling the companion plugin. Installation only enables the companion and
+preserves `themes.activeTheme`, making overlay mode the default. Release builds
+embed both runtime artifacts so the installer does not replace them with an
+unrelated upstream backend.
 
 ## Data flow and ordering
 

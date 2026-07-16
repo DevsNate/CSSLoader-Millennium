@@ -1,3 +1,4 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -6,6 +7,8 @@ from unittest.mock import AsyncMock
 
 from css_millennium import (
     KNOWN_TARGETS,
+    RUNTIME_MODE,
+    THEME_DISPLAY_NAME,
     _enabled_injects,
     _rewrite_asset_urls,
     _target_for_tab,
@@ -112,11 +115,15 @@ class MillenniumCompilerTests(unittest.TestCase):
                 ALL_INJECTS.extend(previous_injects)
 
             self.assertEqual(report["selectedInjects"], 1)
+            self.assertEqual(report["runtimeMode"], RUNTIME_MODE)
             self.assertIn("bigpicture", report["bundles"])
             self.assertIn(
                 "--obsidian-main-color: #111111",
                 (output_root / "generated" / "bigpicture.css").read_text(encoding="utf-8"),
             )
+            skin = json.loads((output_root / "skin.json").read_text(encoding="utf-8"))
+            self.assertEqual(skin["name"], THEME_DISPLAY_NAME)
+            self.assertIn("overlay mode", skin["description"].lower())
 
     def test_reactivated_payload_moves_to_end_of_decky_cascade(self):
         theme = SimpleNamespace(name="Example")

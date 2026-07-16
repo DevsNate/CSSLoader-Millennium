@@ -22,6 +22,7 @@ const browserViewSessions = new Map<string, string>();
 
 type BuildReport = {
   contentHash?: string;
+  runtimeMode?: 'overlay';
   patches?: Array<{
     MatchRegexString?: string;
     TargetCss?: string;
@@ -102,6 +103,13 @@ const stylesheetUrl = (targetCss: string, contentHash: string) => {
   return `https://millennium.host/v1/themes/CSS%20Loader/${encodedPath}?cssloader=${encodeURIComponent(contentHash)}`;
 };
 
+const placeOverlayStylesheetLast = (targetDocument: Document, link: HTMLLinkElement) => {
+  const parent = targetDocument.head ?? targetDocument.documentElement;
+  if (link.parentElement !== parent || parent.lastElementChild !== link) {
+    parent.appendChild(link);
+  }
+};
+
 const syncDocumentStylesheets = (
   targetDocument: Document,
   report: BuildReport,
@@ -139,12 +147,13 @@ const syncDocumentStylesheets = (
     const nextHref = stylesheetUrl(targetCss, contentHash);
     if (existing) {
       if (existing.href !== nextHref) existing.href = nextHref;
+      placeOverlayStylesheetLast(targetDocument, existing);
     } else {
       const link = targetDocument.createElement('link');
       link.rel = 'stylesheet';
       link.href = nextHref;
       link.dataset.cssLoaderRuntime = 'true';
-      (targetDocument.head ?? targetDocument.documentElement).appendChild(link);
+      placeOverlayStylesheetLast(targetDocument, link);
     }
     synced += 1;
   });
@@ -207,6 +216,10 @@ const browserViewSyncExpression = (targetCssFiles: string[], contentHash: string
         .find((link) => targetCssFromLink(link) === targetCss);
       if (existing) {
         if (existing.href !== href) existing.href = href;
+        const parent = document.head || document.documentElement;
+        if (existing.parentElement !== parent || parent.lastElementChild !== existing) {
+          parent.appendChild(existing);
+        }
       } else {
         const link = document.createElement('link');
         link.rel = 'stylesheet';
@@ -354,7 +367,10 @@ const RuntimeStatus = () => {
         CSS Loader Desktop backend: {connected ? 'Connected' : 'Waiting'}
       </PanelSectionRow>
       <PanelSectionRow>
-        Stylesheets update live across Steam and its isolated side-menu views.
+        Mode: Overlay (your selected Millennium theme stays active)
+      </PanelSectionRow>
+      <PanelSectionRow>
+        CSS Loader styles update live across Steam and its isolated side-menu views.
       </PanelSectionRow>
     </PanelSection>
   );

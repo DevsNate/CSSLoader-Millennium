@@ -1,8 +1,8 @@
 {
   "type": "module",
   "name": "@millennium-css-loader/companion",
-  "version": "0.1.0",
-  "description": "Millennium runtime companion for the CSS Loader generated theme.",
+  "version": "0.1.1",
+  "description": "Millennium overlay runtime for generated CSS Loader styles.",
   "author": "Nate and contributors",
   "license": "GPL-3.0-only",
   "repository": {
