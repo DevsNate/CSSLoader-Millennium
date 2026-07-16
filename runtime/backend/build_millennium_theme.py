@@ -7,7 +7,7 @@ from css_millennium import build_from_disk, default_millennium_theme_path
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Build the Millennium CSS Loader overlay from existing CSSLoader themes.")
+    parser = argparse.ArgumentParser(description="Build the CSS Loader for Millennium overlay from existing CSS Loader themes.")
     parser.add_argument(
         "--output",
         type=Path,
