@@ -51,7 +51,19 @@ foreach ($relativePath in $pluginFiles) {
   Copy-Item -LiteralPath $pluginFile -Destination $targetFile -Force
 }
 
-$hash = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash
+$stream = [System.IO.File]::OpenRead($destination)
+try {
+  $sha256 = [System.Security.Cryptography.SHA256]::Create()
+  try {
+    $hashBytes = $sha256.ComputeHash($stream)
+  } finally {
+    $sha256.Dispose()
+  }
+} finally {
+  $stream.Dispose()
+}
+
+$hash = -join ($hashBytes | ForEach-Object { $_.ToString("x2") })
 Write-Output "Bundled backend: $destination"
 Write-Output "SHA256: $hash"
 Write-Output "Bundled companion plugin: $pluginDestination"
