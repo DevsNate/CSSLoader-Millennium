@@ -362,16 +362,31 @@ const RuntimeStatus = () => {
   }, []);
 
   return (
-    <PanelSection title="Runtime">
+    <PanelSection title="CSS Loader Companion">
       <PanelSectionRow>
-        CSS Loader Desktop backend: {connected ? 'Connected' : 'Waiting'}
+        CSS Loader for Millennium: {connected ? 'Connected' : 'Not detected'}
       </PanelSectionRow>
-      <PanelSectionRow>
-        Mode: Overlay (your selected Millennium theme stays active)
-      </PanelSectionRow>
-      <PanelSectionRow>
-        CSS Loader styles update live across Steam and its isolated side-menu views.
-      </PanelSectionRow>
+      {connected ? (
+        <>
+          <PanelSectionRow>
+            Mode: Overlay (your selected Millennium theme stays active)
+          </PanelSectionRow>
+          <PanelSectionRow>
+            Generated styles stay applied even when the desktop app is closed.
+          </PanelSectionRow>
+        </>
+      ) : (
+        <>
+          <PanelSectionRow>
+            Install and open CSS Loader for Millennium to finish setup and generate your styles.
+          </PanelSectionRow>
+          <PanelSectionRow>
+            <a href="https://github.com/DevsNate/css-loader-for-millennium/releases/latest">
+              Download the complete app
+            </a>
+          </PanelSectionRow>
+        </>
+      )}
     </PanelSection>
   );
 };
@@ -379,7 +394,7 @@ const RuntimeStatus = () => {
 startRuntimeWatcher();
 
 export default definePlugin(() => ({
-  title: 'CSS Loader Runtime',
+  title: 'CSS Loader Companion',
   icon: <IconsModule.Settings />,
   content: <RuntimeStatus />,
   onDismount() {

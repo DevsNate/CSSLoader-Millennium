@@ -23,12 +23,12 @@ function get_css_loader_revision()
 end
 
 local function on_load()
-    logger:info("CSS Loader runtime companion loaded")
+    logger:info("CSS Loader Companion loaded")
     millennium.ready()
 end
 
 local function on_unload()
-    logger:info("CSS Loader runtime companion unloaded")
+    logger:info("CSS Loader Companion unloaded")
 end
 
 return {

@@ -1,14 +1,13 @@
 {
   "type": "module",
-  "name": "@millennium-css-loader/companion",
-  "version": "0.1.1",
-  "description": "Millennium overlay runtime for generated CSS Loader styles.",
+  "name": "@css-loader-for-millennium/companion",
+  "version": "0.2.0",
+  "description": "Official Millennium companion for CSS Loader for Millennium.",
   "author": "Nate and contributors",
   "license": "GPL-3.0-only",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DevsNate/millennium-css-loader.git",
-    "directory": "plugins/millennium"
+    "url": "git+https://github.com/DevsNate/css-loader-companion-for-millennium.git"
   },
   "main": "./frontend/index.jsx",
   "scripts": {
