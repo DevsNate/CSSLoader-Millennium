@@ -46,7 +46,19 @@ jobs:
           }
 
           $msi = $msis[0]
-          $checksum = (Get-FileHash -LiteralPath $msi.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          $stream = [System.IO.File]::OpenRead($msi.FullName)
+          try {
+            $sha256 = [System.Security.Cryptography.SHA256]::Create()
+            try {
+              $hashBytes = $sha256.ComputeHash($stream)
+            } finally {
+              $sha256.Dispose()
+            }
+          } finally {
+            $stream.Dispose()
+          }
+
+          $checksum = -join ($hashBytes | ForEach-Object { $_.ToString("x2") })
           "$checksum  $($msi.Name)" | Set-Content -LiteralPath (Join-Path $bundleDir "SHA256SUMS.txt") -Encoding ascii
       - uses: actions/upload-artifact@v7
         with:

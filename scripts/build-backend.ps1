@@ -26,6 +26,18 @@ if (-not (Test-Path -LiteralPath $artifact -PathType Leaf)) {
   throw "Backend build completed without producing $artifact"
 }
 
-$hash = (Get-FileHash -LiteralPath $artifact -Algorithm SHA256).Hash
+$stream = [System.IO.File]::OpenRead($artifact)
+try {
+  $sha256 = [System.Security.Cryptography.SHA256]::Create()
+  try {
+    $hashBytes = $sha256.ComputeHash($stream)
+  } finally {
+    $sha256.Dispose()
+  }
+} finally {
+  $stream.Dispose()
+}
+
+$hash = -join ($hashBytes | ForEach-Object { $_.ToString("x2") })
 Write-Output "Backend: $artifact"
 Write-Output "SHA256: $hash"
