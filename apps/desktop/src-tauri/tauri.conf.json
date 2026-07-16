@@ -109,6 +109,7 @@
         "icons/icon.ico"
       ],
       "identifier": "io.github.devsnate.cssloader.millennium",
+      "publisher": "DevsNate",
       "longDescription": "Manage existing CSS Loader themes and compile them into a persistent Millennium theme for Steam on Windows.",
       "macOS": {
         "entitlements": null,
