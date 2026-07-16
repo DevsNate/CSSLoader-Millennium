@@ -2,21 +2,41 @@ version: 2
 updates:
   - package-ecosystem: pip
     directory: /runtime/backend
+    open-pull-requests-limit: 1
     schedule:
       interval: weekly
+    groups:
+      runtime-dependencies:
+        patterns: ["*"]
   - package-ecosystem: npm
     directory: /plugins/millennium
+    open-pull-requests-limit: 1
     schedule:
       interval: weekly
+    groups:
+      companion-dependencies:
+        patterns: ["*"]
   - package-ecosystem: npm
     directory: /apps/desktop
+    open-pull-requests-limit: 1
     schedule:
       interval: weekly
+    groups:
+      desktop-dependencies:
+        patterns: ["*"]
   - package-ecosystem: cargo
     directory: /apps/desktop/src-tauri
+    open-pull-requests-limit: 1
     schedule:
       interval: weekly
+    groups:
+      rust-dependencies:
+        patterns: ["*"]
   - package-ecosystem: github-actions
     directory: /
+    open-pull-requests-limit: 1
     schedule:
       interval: weekly
+    groups:
+      workflow-actions:
+        patterns: ["*"]
