@@ -89,7 +89,7 @@
         "scope": [
           "http://127.0.0.1:35821/req",
           "https://api.deckthemes.com/*",
-          "https://api.github.com/repos/DevsNate/CSS-Loader-for-Millennium/*"
+          "https://api.github.com/repos/DevsNate/CSSLoader-Millennium/*"
         ]
       }
     },

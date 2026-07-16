@@ -15,7 +15,7 @@ Thanks for helping make CSS Loader compatibility on Millennium more reliable.
 
 Clone with `--recurse-submodules`, or run `git submodule update --init`, before
 building. Companion changes belong in
-[`CSS-Loader-Companion-for-Millennium`](https://github.com/DevsNate/CSS-Loader-Companion-for-Millennium);
+[`CSSLoader-Companion-Millennium`](https://github.com/DevsNate/CSSLoader-Companion-Millennium);
 update this repository's pinned submodule commit after the companion change is
 published.
 

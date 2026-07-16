@@ -41,7 +41,7 @@ Loader-only presentation.
 ## Millennium companion
 
 The separately maintained
-[CSS Loader Companion for Millennium](https://github.com/DevsNate/CSS-Loader-Companion-for-Millennium),
+[CSS Loader Companion for Millennium](https://github.com/DevsNate/CSSLoader-Companion-Millennium),
 pinned into this repository at `plugins/millennium` for release builds, is the
 primary overlay runtime. It synchronizes Desktop
 and Big Picture directly inside Steam, then reaches Quick Access, Main Menu,
