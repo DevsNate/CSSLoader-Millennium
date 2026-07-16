@@ -3,6 +3,13 @@
 CSS Loader for Millennium keeps CSS Loader's theme format and configuration
 model, but changes how the final styles reach Steam.
 
+The adapter is required because stock CSS Loader relies on an external CDP
+endpoint and creates Steam's `.cef-enable-remote-debugging` marker. Millennium
+removes that deprecated marker during its startup health/safety checks and only
+exposes an external debugging port in `-dev` mode. This project retains CSS
+Loader's theme/configuration behavior while replacing that incompatible
+injection path.
+
 ```mermaid
 flowchart LR
   T["Existing CSS Loader themes"] --> R["Python compatibility runtime"]
@@ -34,7 +41,7 @@ BrowserViews. `plugins/millennium` live-syncs only those isolated targets using
 Millennium's per-plugin Chrome DevTools Protocol proxy.
 
 This is not an external CDP setup: the project does not open port 8080, require
-Steam developer mode, or run a separate browser bridge. The generated theme
+Millennium `-dev` mode, or run a separate browser bridge. The generated theme
 remains the primary runtime and startup path.
 
 ## Desktop manager

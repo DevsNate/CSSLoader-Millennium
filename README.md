@@ -1,7 +1,7 @@
 <div align="center">
   <img src="docs/assets/css-loader-wordmark.svg" alt="CSS Loader" width="520" />
   <h1>CSS Loader for Millennium</h1>
-  <p><strong>Bring the existing CSS Loader theme ecosystem to Millennium—with<br />profiles, patch options, target routing, and saved state preserved.</strong></p>
+  <p><strong>Make CSS Loader work with Millennium's normal safe runtime—without<br /><code>-dev</code> mode or an external CDP debugging flag.</strong></p>
   <p>
     <a href="https://www.microsoft.com/windows"><img alt="Platform: Windows" src="https://img.shields.io/badge/platform-Windows-0078D4?logo=windows" /></a>
     <a href="https://github.com/SteamClientHomebrew/Millennium"><img alt="Runtime: Millennium" src="https://img.shields.io/badge/runtime-Millennium-171A21" /></a>
@@ -10,41 +10,40 @@
   </p>
 </div>
 
-CSS Loader themes are **not natively compatible with Millennium**. The two
-projects use different theme formats, configuration models, and methods for
-routing styles into Steam's UI. Millennium cannot directly read a CSS Loader
-`theme.json`, reproduce its profiles and patch controls, or apply its target
-rules simply because both tools can theme Steam.
+**CSS Loader itself—not its themes—is incompatible with Millennium's normal
+runtime.** CSS Loader's Windows standalone backend expects an externally
+reachable Chrome DevTools Protocol (CDP) endpoint for injecting styles into
+Steam. It creates Steam's `.cef-enable-remote-debugging` marker to enable that
+path.
 
-CSS Loader for Millennium is the compatibility runtime that supplies those
-missing behaviors. It reads existing CSS Loader theme folders and
-configuration, resolves them as CSS Loader would, and compiles the selected
-result into one persistent Millennium theme named **CSS Loader**.
+Millennium deliberately removes that deprecated `.cef` marker during its
+startup health/safety checks. Its external remote-debugging port is only
+exposed when Millennium is launched with `-dev`. Consequently, stock CSS
+Loader loses the CDP injection path it requires when Millennium runs normally.
 
 > [!NOTE]
-> This is not merely an early-loading patch for an otherwise Millennium-compatible
-> CSS Loader installation. It is the compatibility layer that makes the existing
-> CSS Loader ecosystem usable through Millennium in the first place.
+> This is not merely a fix for delayed theme loading. Without a compatibility
+> layer, normal Millennium and stock CSS Loader conflict over the external CDP
+> mechanism, so CSS Loader does not function correctly in the first place.
 
-## The incompatibility this solves
+## How this resolves the conflict
 
-CSS Loader's original runtimes own much more than CSS injection: they parse
-theme manifests, resolve dependencies, store profiles, generate component and
-color values, translate Steam classes, preserve cascade order, and route each
-payload to the correct Steam document. Millennium's theme engine does not
-understand that CSS Loader-specific model on its own.
+CSS Loader for Millennium replaces the incompatible injection path while
+retaining CSS Loader's theme engine and configuration behavior. The backend
+still reads existing CSS Loader themes, profiles, dependencies, patch values,
+colors, components, class translations, and activation order.
 
-| CSS Loader behavior | Millennium compatibility provided here |
+| Stock CSS Loader path | Millennium-compatible replacement |
 | --- | --- |
-| `theme.json`, dependencies, profiles, and saved patch values | Compatibility runtime that reads and resolves the existing format |
-| Dynamic options, colors, components, and activation order | Compiler that regenerates the exact selected CSS state |
-| CSS Loader tabs and document-specific inject targets | Millennium patches plus a companion for isolated BrowserViews |
-| Live configuration managed by CSSLoader Desktop | Millennium-aware desktop manager and bundled backend |
+| Creates `.cef-enable-remote-debugging` | Does not create or depend on the marker |
+| Requires an externally reachable CDP port | Compiles the selected state into a persistent Millennium theme |
+| Needs Millennium's `-dev` mode to expose that port | Works with Millennium's normal runtime mode |
+| Injects every Steam document through external CDP | Uses Millennium patches plus its controlled per-plugin CDP proxy for isolated BrowserViews |
 
 Quick Access, Main Menu, and notifications live in separate Steam BrowserViews.
 The companion keeps those targets synchronized through Millennium's own
-isolated plugin API—without an external CDP port, Steam developer mode, or a
-separate browser bridge.
+isolated plugin API. It does not expose an external CDP port, recreate the
+`.cef` marker, require Millennium `-dev` mode, or run a separate browser bridge.
 
 Eliminating the delayed theming flash is an additional benefit of this design,
 not the entire purpose of the project. The compatibility runtime persists the
@@ -54,8 +53,9 @@ late standalone injection pass.
 
 ## Highlights
 
-- Translates CSS Loader's otherwise incompatible theme/configuration model into
-  a Millennium runtime.
+- Replaces CSS Loader's external CDP injection path with a Millennium-compatible
+  generated-theme runtime.
+- Requires neither Millennium `-dev` mode nor `.cef-enable-remote-debugging`.
 - Uses existing themes from `~/homebrew/themes`; no manual conversion required.
 - Preserves profiles, dependencies, patch options, colors, CSS variables, local
   images/fonts, class translations, and CSS cascade order.
@@ -82,8 +82,8 @@ reference warning in [Compatibility verification](docs/verification.md).
 > [!IMPORTANT]
 > This project currently targets **Windows** and requires a working
 > [Millennium](https://github.com/SteamClientHomebrew/Millennium) installation.
-> Copying CSS Loader themes into a Millennium theme folder is not sufficient;
-> this compatibility runtime and its companion must be installed.
+> The stock CSS Loader standalone backend is not the correct runtime for this
+> setup; this Millennium-aware backend and its companion must be installed.
 
 1. Install Millennium and start Steam once so Millennium creates its config.
 2. Download the latest MSI from this repository's Releases page.
