@@ -36,14 +36,57 @@ jobs:
           npm ci --prefix apps/desktop
       - name: Build installer
         run: npm run build:release
+      - name: Create checksum
+        shell: pwsh
+        run: |
+          $bundleDir = "apps/desktop/src-tauri/target/release/bundle/msi"
+          $msis = @(Get-ChildItem -LiteralPath $bundleDir -Filter "*.msi")
+          if ($msis.Count -ne 1) {
+            throw "Expected exactly one MSI, found $($msis.Count)"
+          }
+
+          $msi = $msis[0]
+          $checksum = (Get-FileHash -LiteralPath $msi.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$checksum  $($msi.Name)" | Set-Content -LiteralPath (Join-Path $bundleDir "SHA256SUMS.txt") -Encoding ascii
       - uses: actions/upload-artifact@v7
         with:
           name: css-loader-for-millennium-msi
-          path: apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+            apps/desktop/src-tauri/target/release/bundle/msi/SHA256SUMS.txt
           if-no-files-found: error
-      - name: Publish tagged release
+      - name: Create draft tagged release
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
-        run: gh release create $env:GITHUB_REF_NAME apps/desktop/src-tauri/target/release/bundle/msi/*.msi --generate-notes --verify-tag
+        run: |
+          $bundleDir = "apps/desktop/src-tauri/target/release/bundle/msi"
+          $msis = @(Get-ChildItem -LiteralPath $bundleDir -Filter "*.msi")
+          if ($msis.Count -ne 1) {
+            throw "Expected exactly one MSI, found $($msis.Count)"
+          }
+
+          $msi = $msis[0]
+          $checksum = Get-Item -LiteralPath (Join-Path $bundleDir "SHA256SUMS.txt")
+          $notesPath = ".github/release-notes/$($env:GITHUB_REF_NAME).md"
+          $arguments = @(
+            "release", "create", $env:GITHUB_REF_NAME,
+            $msi.FullName,
+            $checksum.FullName,
+            "--verify-tag",
+            "--draft",
+            "--prerelease",
+            "--title", "CSS Loader for Millennium $env:GITHUB_REF_NAME (Preview)"
+          )
+
+          if (Test-Path -LiteralPath $notesPath) {
+            $arguments += @("--notes-file", $notesPath)
+          } else {
+            $arguments += "--generate-notes"
+          }
+
+          & gh @arguments
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
