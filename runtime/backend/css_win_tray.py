@@ -1,10 +1,20 @@
-import pystray, css_theme, css_utils, os, webbrowser, subprocess
+import ctypes, os, subprocess, webbrowser
+
+import psutil
+import pystray
+from ctypes import wintypes
 from PIL import Image, ImageDraw
+
+import css_theme
+import css_utils
 
 ICON = None
 MAIN = None
 LOOP = None
 DEV_MODE_STATE = False
+DESKTOP_PROCESS_NAME = "CSS Loader for Millennium.exe"
+RESTART_BACKEND_ARGUMENT = "--restart-backend"
+WM_CLOSE = 0x0010
 
 def reset():
     LOOP.create_task(MAIN.reset(MAIN))
@@ -13,8 +23,69 @@ def open_theme_dir():
     theme_dir = css_utils.get_theme_path()
     os.startfile(theme_dir)
 
-def exit():
-    LOOP.create_task(MAIN.exit(MAIN))
+def _desktop_processes():
+    processes = []
+    for process in psutil.process_iter(["name"]):
+        try:
+            if process.info["name"] == DESKTOP_PROCESS_NAME:
+                processes.append(process)
+        except (psutil.AccessDenied, psutil.NoSuchProcess):
+            continue
+    return processes
+
+def _request_desktop_window_close(process_ids):
+    if not process_ids:
+        return
+
+    user32 = ctypes.windll.user32
+    callback_type = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+
+    def close_window(window, _lparam):
+        process_id = wintypes.DWORD()
+        user32.GetWindowThreadProcessId(window, ctypes.byref(process_id))
+        if process_id.value in process_ids:
+            user32.PostMessageW(window, WM_CLOSE, 0, 0)
+        return True
+
+    user32.EnumWindows(callback_type(close_window), 0)
+
+def _stop_desktop_app():
+    processes = _desktop_processes()
+    if not processes:
+        return
+
+    _request_desktop_window_close({process.pid for process in processes})
+    _, alive = psutil.wait_procs(processes, timeout=3)
+
+    # A hidden, blocked, or unresponsive desktop window must not be allowed to
+    # relaunch the backend after the user deliberately selected Exit.
+    for process in alive:
+        try:
+            process.terminate()
+        except (psutil.AccessDenied, psutil.NoSuchProcess):
+            pass
+    _, alive = psutil.wait_procs(alive, timeout=2)
+    for process in alive:
+        try:
+            process.kill()
+        except (psutil.AccessDenied, psutil.NoSuchProcess):
+            pass
+
+def exit_all():
+    _stop_desktop_app()
+    stop_icon()
+    # sys.exit() raised inside the backend's asyncio task does not reliably
+    # terminate the packaged GUI process. Exit the current backend process
+    # directly after its tray icon and desktop companion have been closed.
+    os._exit(0)
+
+def restart_all():
+    path = get_desktop_install_path()
+    if path is None:
+        return
+
+    _stop_desktop_app()
+    subprocess.Popen([path, RESTART_BACKEND_ARGUMENT])
 
 def get_dev_mode_state(x) -> bool:
     return DEV_MODE_STATE
@@ -75,7 +146,8 @@ def start_icon(main, loop):
         pystray.MenuItem("Live CSS Editing", toggle_dev_mode_state, checked=get_dev_mode_state),
         pystray.MenuItem("Open Themes Folder", open_theme_dir),
         pystray.MenuItem("Reload Themes", reset),
-        pystray.MenuItem("Exit", exit)
+        pystray.MenuItem("Restart CSS Loader", restart_all, enabled=get_desktop_install_path() != None),
+        pystray.MenuItem("Exit", exit_all)
     ))
     ICON.run_detached()
 

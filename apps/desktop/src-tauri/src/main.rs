@@ -7,6 +7,7 @@ use home::home_dir;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::{fs, ptr};
 use zip_extract;
 
@@ -18,6 +19,12 @@ const LEGACY_BACKEND_FILE_NAME: &str = "CssLoader-Standalone-Headless.exe";
 const BACKEND_AUTORUN_NAME: &str = "CSS Loader for Millennium Backend";
 #[cfg(target_os = "windows")]
 const WINDOWS_RUN_KEY: &str = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+#[cfg(target_os = "windows")]
+const STEAM_REGISTRY_KEY: &str = "SOFTWARE\\Wow6432Node\\Valve\\Steam";
+#[cfg(target_os = "windows")]
+const COMPANION_PLUGIN_ID: &str = "css-loader-companion";
+#[cfg(target_os = "windows")]
+static RESTART_BACKEND_REQUESTED: AtomicBool = AtomicBool::new(false);
 
 #[cfg(target_os = "windows")]
 use {
@@ -71,6 +78,11 @@ fn acquire_single_instance() -> Option<winapi::shared::ntdef::HANDLE> {
 
 #[cfg(target_os = "windows")]
 fn main() {
+    RESTART_BACKEND_REQUESTED.store(
+        std::env::args().any(|argument| argument == "--restart-backend"),
+        Ordering::Relaxed,
+    );
+
     let single_instance = match acquire_single_instance() {
         Some(handle) => handle,
         None => return,
@@ -81,6 +93,9 @@ fn main() {
             download_template,
             ensure_installation,
             ensure_theme_library,
+            companion_installed,
+            companion_runtime_ready,
+            take_restart_backend_request,
             installation_complete,
             kill_standalone_backend,
             start_backend,
@@ -165,6 +180,43 @@ fn get_backend_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
             BACKEND_FILE_NAME
         ))
         .ok_or_else(|| String::from("Bundled onedir backend launcher was not found"))
+}
+
+#[cfg(target_os = "windows")]
+fn steam_install_path() -> PathBuf {
+    let hklm = RegKey::predef(winreg::enums::HKEY_LOCAL_MACHINE);
+    hklm.open_subkey(STEAM_REGISTRY_KEY)
+        .ok()
+        .and_then(|key| key.get_value::<String, _>("InstallPath").ok())
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(r"C:\Program Files (x86)\Steam"))
+}
+
+#[cfg(target_os = "windows")]
+fn companion_plugin_path() -> PathBuf {
+    steam_install_path()
+        .join("millennium")
+        .join("plugins")
+        .join(COMPANION_PLUGIN_ID)
+}
+
+#[cfg(target_os = "windows")]
+#[tauri::command]
+fn companion_installed() -> bool {
+    companion_plugin_path().join("plugin.json").is_file()
+}
+
+#[cfg(target_os = "windows")]
+#[tauri::command]
+fn companion_runtime_ready() -> bool {
+    let runtime = companion_plugin_path().join("runtime");
+    runtime.join("build-report.json").is_file() && runtime.join("runtime-state.json").is_file()
+}
+
+#[cfg(target_os = "windows")]
+#[tauri::command]
+fn take_restart_backend_request() -> bool {
+    RESTART_BACKEND_REQUESTED.swap(false, Ordering::Relaxed)
 }
 
 #[cfg(target_os = "windows")]

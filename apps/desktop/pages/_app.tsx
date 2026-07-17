@@ -16,6 +16,8 @@ import {
   getLastLoadErrors,
   changePreset,
   getBackendVersion,
+  restartBackend,
+  takeRestartBackendRequest,
 } from "../backend";
 import { themeContext } from "@contexts/themeContext";
 import { FontContext } from "@contexts/FontContext";
@@ -80,6 +82,9 @@ export default function App(AppProps: AppProps) {
   async function initializeWindowsInstallation() {
     try {
       await ensureInstallation();
+      if (await takeRestartBackendRequest()) {
+        await restartBackend();
+      }
     } catch {
       // The setup modal remains visible and exposes a retry with the full
       // error message. This commonly means Millennium has not been started

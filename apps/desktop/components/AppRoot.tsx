@@ -9,6 +9,7 @@ import { backendStatusContext } from "@contexts/backendStatusContext";
 import { themeContext } from "@contexts/themeContext";
 import { osContext } from "@contexts/osContext";
 import { useRouter } from "next/router";
+import { MissingCompanionDialog } from "./MissingCompanionDialog";
 
 export function AppRoot({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -68,6 +69,7 @@ export function AppRoot({ Component, pageProps }: AppProps) {
             pauseOnHover
             theme={"dark"}
           />
+          <MissingCompanionDialog enabled={isWindows && installationChecked} />
           {dummyResult && <MainNav />}
           <main
             className={`flex h-min flex-1 flex-grow flex-col ${

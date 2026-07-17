@@ -7,4 +7,8 @@ export * from "./getOS";
 export * from "./downloadTemplate";
 export * from "./downloadBackend";
 export * from "./checkIfThemeExists";
+export * from "./checkIfCompanionInstalled";
+export * from "./checkIfCompanionRuntimeReady";
 export * from "./ensureInstallation";
+export * from "./restartBackend";
+export * from "./takeRestartBackendRequest";
