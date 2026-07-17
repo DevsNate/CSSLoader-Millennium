@@ -26,56 +26,21 @@ Loader loses the CDP injection path it requires when Millennium runs normally.
 > layer, normal Millennium and stock CSS Loader conflict over the external CDP
 > mechanism, so CSS Loader does not function correctly in the first place.
 
-## Version 1.1
-
-Version 1.1 is a reliability release based on the first public 1.0 testing
-cycle. It improves downloaded-profile compatibility, reports store failures
-accurately, hardens Windows packaging, and prevents duplicate desktop windows.
-
-### What's new in 1.1
-
-- Loads UTF-8 profile manifests and configuration values correctly on Windows,
-  including option labels that contain emoji or other non-ASCII characters.
-- Restores image-picker assets bundled inside downloaded profiles before their
-  dependency themes are activated, with traversal protection for unsafe paths.
-- Propagates dependency-download failures and shows the real install result in
-  the Store instead of displaying a false success message.
-- Bundles Pillow's native imaging components explicitly and performs clean
-  backend builds so stale PyInstaller analysis cannot produce a broken runtime.
-- Runs the desktop manager as a single instance; launching it again restores
-  and focuses the existing window.
-- Adds regression coverage for Unicode profiles, profile assets, unsafe asset
-  paths, and the complete post-install profile flow.
-
-## Version 1.0
-
-Version 1.0 is the first stable release of the complete CSS Loader for
-Millennium experience: the desktop manager, compatibility backend, direct
-runtime publisher, and official Millennium companion.
-
-Its defining advantage is fidelity. Existing CSS Loader themes remain in their
-native format and are resolved by CSS Loader's own theme engine. The resulting
-styles are delivered directly to Steam without flattening them into converted
-Millennium bundles or rewriting valid CSS constructs.
 
 ### Main highlights
 
-- Full CSS Loader configuration model: themes, profiles, dependencies, patch
-  controls, colors, generated variables, enable state, and cascade order.
-- Direct CSS delivery that preserves inline SVG, data URLs, animations, local
-  assets, and advanced CSS exactly as authored.
-- Desktop, Big Picture, Quick Access, Main Menu, notification, and popup target
-  routing through Millennium's supported in-process interfaces.
-- Normal Millennium operation with no Steam `-dev` mode, external debugging
-  port, or `.cef-enable-remote-debugging` marker.
-- Overlay behavior that keeps Fluenty, SpaceTheme, Pebble, or another selected
-  Millennium theme active underneath CSS Loader.
-- Desktop management for installed themes, profiles, settings, store browsing,
-  downloads, updates, and the always-on Windows backend.
-- Atomic runtime updates: the companion accepts new state only when its revision
-  and content hash match.
-- Compatibility regression coverage for real-world themes, including nested
-  inline-SVG filters and `/themes_custom` images and fonts.
+- Full CSS Loader configuration model: themes, profiles, dependencies, patch controls, colors, generated variables, enable state, and cascade order.
+- Direct CSS delivery that preserves inline SVG, data URLs, animations, local assets, and advanced CSS exactly as authored.
+- Desktop, Big Picture, Quick Access, Main Menu, notification, and popup target routing through Millennium’s supported in-process interfaces.
+- Normal Millennium operation with no Steam `-dev` mode, external debugging port, or `.cef-enable-remote-debugging` marker.
+- Overlay behavior that keeps Fluenty, SpaceTheme, Pebble, or another selected Millennium theme active underneath CSS Loader.
+- Desktop management for installed themes, profiles, settings, store browsing, downloads, updates, and the always-on Windows backend.
+- Reliable downloaded-profile support, including Unicode and emoji configuration values, bundled image-picker assets, and dependency themes.
+- Accurate Store installation reporting that surfaces dependency and download failures instead of displaying false success messages.
+- Hardened Windows packaging with complete native imaging support and clean, reproducible backend builds.
+- Single-instance desktop manager that restores and focuses the existing window when launched again.
+- Atomic runtime updates: the companion accepts new state only when its revision and content hash match.
+- Compatibility and reliability coverage for real-world themes, Unicode profiles, profile assets, unsafe paths, nested inline-SVG filters, and `/themes_custom` images and fonts.
 
 ## How this resolves the conflict
 
