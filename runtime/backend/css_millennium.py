@@ -1,5 +1,5 @@
-import json
 import hashlib
+import json
 import os
 import re
 import shutil
@@ -13,8 +13,10 @@ from css_utils import Log, get_steam_path, get_theme_path
 
 
 THEME_NAME = "CSS Loader"
-THEME_DISPLAY_NAME = "CSS Loader (Standalone)"
-RUNTIME_MODE = "overlay"
+THEME_DISPLAY_NAME = "CSS Loader Runtime"
+RUNTIME_MODE = "direct"
+PROTOCOL_VERSION = 1
+STATE_FILE = "runtime-state.json"
 
 
 @dataclass(frozen=True)
@@ -69,13 +71,7 @@ def _target_for_tab(tab: str) -> MillenniumTarget:
 
 
 def _targets_for_tab(tab: str) -> list[MillenniumTarget]:
-    """Return the same document target used by Decky's CSS Loader.
-
-    Steam exposes Main Menu and Quick Access as separate browser-view
-    documents.  Millennium's runtime bridge is responsible for reaching those
-    documents; folding their bundles into Big Picture changes selector scope
-    and cascade order compared with Decky's reference behavior.
-    """
+    """Return the same document target used by Decky's CSS Loader."""
     return [_target_for_tab(tab)]
 
 
@@ -93,36 +89,6 @@ def _translate_classes(css: str) -> str:
     return "".join(split_css)
 
 
-def _relative_asset_url(source_css: Path, themes_root: Path, raw_url: str) -> str:
-    value = raw_url.strip().strip('"\'')
-    lower = value.lower()
-    if not value or lower.startswith(("data:", "http:", "https:", "blob:", "var(")) or value.startswith("#"):
-        return raw_url
-
-    normalized = value.replace("\\", "/")
-    if normalized.lower().startswith("/themes_custom/"):
-        relative = normalized[len("/themes_custom/") :]
-    elif normalized.startswith("/"):
-        return raw_url
-    else:
-        try:
-            relative = (source_css.parent / normalized).resolve().relative_to(themes_root.resolve()).as_posix()
-        except ValueError:
-            return raw_url
-
-    return '"../assets/themes/' + relative.replace('"', '\\"') + '"'
-
-
-URL_PATTERN = re.compile(r"url\(\s*([^)]*?)\s*\)", re.IGNORECASE)
-
-
-def _rewrite_asset_urls(css: str, source_css: Path, themes_root: Path) -> str:
-    return URL_PATTERN.sub(
-        lambda match: "url(" + _relative_asset_url(source_css, themes_root, match.group(1)) + ")",
-        css,
-    )
-
-
 def _atomic_write(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists() and path.read_text(encoding="utf-8", errors="replace") == content:
@@ -130,25 +96,6 @@ def _atomic_write(path: Path, content: str) -> None:
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(content, encoding="utf-8", newline="\n")
     os.replace(temporary, path)
-
-
-def _copy_theme_sources(loader: Loader, themes_root: Path, output_root: Path) -> list[str]:
-    copied = []
-    destination_root = output_root / "assets" / "themes"
-    if destination_root.exists():
-        shutil.rmtree(destination_root)
-    destination_root.mkdir(parents=True, exist_ok=True)
-
-    for theme in sorted((theme for theme in loader.themes if theme.enabled), key=lambda item: item.name.lower()):
-        source = Path(theme.themePath)
-        try:
-            relative = source.resolve().relative_to(themes_root.resolve())
-        except ValueError:
-            continue
-        destination = destination_root / relative
-        shutil.copytree(source, destination, dirs_exist_ok=True)
-        copied.append(relative.as_posix())
-    return copied
 
 
 def _enabled_injects() -> Iterable:
@@ -160,103 +107,160 @@ def _enabled_injects() -> Iterable:
     )
 
 
+def _resolved_inject_css(inject, themes_root: Path) -> tuple[str, str]:
+    """Return CSS Loader's translated CSS without JavaScript-string escaping.
+
+    File-backed Inject objects may already contain an escaped copy in
+    ``inject.css`` after legacy CDP use. Reading the source again prevents those
+    escape characters from leaking into the Millennium direct-style protocol.
+    Generated variables and patch components have no real source file, so their
+    in-memory CSS remains authoritative.
+    """
+    source_css = Path(inject.cssPath) if inject.cssPath else None
+    if source_css is not None and source_css.is_file():
+        css = source_css.read_text(encoding="utf-8", errors="replace")
+        try:
+            origin = source_css.resolve().relative_to(themes_root.resolve()).as_posix()
+        except ValueError:
+            origin = str(source_css)
+        return _translate_classes(css), origin
+
+    return inject.css or "", "generated CSS"
+
+
+def _remove_legacy_compiler_output(output_root: Path) -> None:
+    for directory_name in ("generated", "assets"):
+        directory = output_root / directory_name
+        if directory.exists():
+            shutil.rmtree(directory)
+
+
+def _sync_active_theme_assets(loader: Loader, themes_root: Path, destination_root: Path) -> list[str]:
+    """Keep CSS Loader's /themes_custom asset path current without rewriting CSS."""
+    try:
+        destination_root.mkdir(parents=True, exist_ok=True)
+    except OSError as error:
+        Log(f"Could not prepare CSS Loader asset path '{destination_root}': {error}")
+        return []
+    try:
+        if destination_root.resolve() == themes_root.resolve():
+            return []
+    except OSError:
+        pass
+
+    synced = []
+    for theme in (theme for theme in loader.themes if theme.enabled):
+        source = Path(theme.themePath)
+        if not source.is_dir():
+            continue
+        try:
+            relative = source.resolve().relative_to(themes_root.resolve())
+        except ValueError:
+            continue
+        try:
+            shutil.copytree(source, destination_root / relative, dirs_exist_ok=True)
+            synced.append(relative.as_posix())
+        except OSError as error:
+            Log(f"Could not sync CSS Loader assets for '{theme.name}': {error}")
+    return synced
+
+
 def compile_millennium_theme(
     loader: Loader,
     output_root: Path | str | None = None,
     themes_root: Path | str | None = None,
 ) -> dict:
+    """Publish CSS Loader's resolved injects for the Millennium companion.
+
+    Despite the historical function name, this no longer compiles or rewrites
+    CSS bundles. The app publishes exact translated payloads in CSS Loader
+    cascade order and the companion applies them as individual style elements.
+    """
+    publish_to_live_runtime = output_root is None
     output_root = Path(output_root) if output_root is not None else default_millennium_theme_path()
     themes_root = Path(themes_root) if themes_root is not None else Path(get_theme_path())
     output_root.mkdir(parents=True, exist_ok=True)
 
-    copied_themes = _copy_theme_sources(loader, themes_root, output_root)
-    bundles: dict[MillenniumTarget, list[str]] = {}
-    selected_injects = 0
+    synced_theme_assets = []
+    if publish_to_live_runtime:
+        synced_theme_assets = _sync_active_theme_assets(
+            loader,
+            themes_root,
+            Path(get_steam_path()) / "steamui" / "themes_custom",
+        )
+
+    injections = []
+    target_report: dict[str, dict] = {}
 
     for inject in _enabled_injects():
-        selected_injects += 1
-        # CSS variables and patch components are generated in memory. Some
-        # component injects retain a placeholder path ("/" on CSS Loader
-        # Desktop), so prefer their generated CSS before considering cssPath.
-        if inject.css is not None:
-            css = inject.css.replace("/themes_custom/", "../assets/themes/")
-            origin = "generated CSS variable"
-        elif inject.cssPath:
-            source_css = Path(inject.cssPath)
-            css = source_css.read_text(encoding="utf-8", errors="replace")
-            css = _translate_classes(css)
-            css = _rewrite_asset_urls(css, source_css, themes_root)
-            origin = source_css.resolve().relative_to(themes_root.resolve()).as_posix()
-        else:
-            css = ""
-            origin = "generated CSS variable"
-
-        block = f"\n/* CSS Loader source: {origin} */\n{css.rstrip()}\n"
+        css, origin = _resolved_inject_css(inject, themes_root)
+        seen_targets = set()
         for tab in inject.tabs:
             for target in _targets_for_tab(tab):
-                if block not in bundles.setdefault(target, []):
-                    bundles[target].append(block)
+                if target.key in seen_targets:
+                    continue
+                seen_targets.add(target.key)
+                injection_id = f"{inject.activation_order}:{target.key}"
+                injections.append(
+                    {
+                        "id": injection_id,
+                        "target": target.key,
+                        "matchRegex": target.match_regex,
+                        "source": origin,
+                        "css": css,
+                    }
+                )
+                summary = target_report.setdefault(
+                    target.key,
+                    {"match": target.match_regex, "injections": 0, "bytes": 0},
+                )
+                summary["injections"] += 1
+                summary["bytes"] += len(css.encode("utf-8"))
 
-    patches = []
-    bundle_report = {}
-    content_hash = hashlib.sha256()
-    generated_root = output_root / "generated"
-    generated_root.mkdir(parents=True, exist_ok=True)
-    expected_bundle_names = {f"{target.key}.css" for target in bundles}
-
-    for target in sorted(bundles, key=lambda item: item.key):
-        relative_path = f"generated/{target.key}.css"
-        content = (
-            "/* Generated by CSS Loader. Changes will be overwritten. */\n"
-            + "".join(bundles[target])
-        )
-        _atomic_write(output_root / relative_path, content)
-        content_hash.update(target.key.encode("utf-8"))
-        content_hash.update(b"\0")
-        content_hash.update(content.encode("utf-8"))
-        patches.append({"MatchRegexString": target.match_regex, "TargetCss": relative_path})
-        bundle_report[target.key] = {
-            "match": target.match_regex,
-            "blocks": len(bundles[target]),
-            "bytes": len(content.encode("utf-8")),
-        }
-
-    skin = {
-        "name": THEME_DISPLAY_NAME,
-        "author": "CSS Loader contributors",
-        "description": (
-            "Generated CSS Loader asset host. Leave your preferred Millennium theme selected "
-            "for overlay mode, or select this theme for CSS Loader-only mode."
-        ),
-        "version": "0.2.0",
-        "Patches": patches,
+    hash_input = json.dumps(injections, ensure_ascii=False, separators=(",", ":"))
+    content_hash = hashlib.sha256(hash_input.encode("utf-8")).hexdigest()
+    state = {
+        "protocolVersion": PROTOCOL_VERSION,
+        "contentHash": content_hash,
+        "injections": injections,
     }
-    _atomic_write(output_root / "skin.json", json.dumps(skin, indent=2) + "\n")
-
     report = {
         "theme": THEME_NAME,
         "themeDisplayName": THEME_DISPLAY_NAME,
         "runtimeMode": RUNTIME_MODE,
+        "protocolVersion": PROTOCOL_VERSION,
+        "stateFile": STATE_FILE,
         "output": str(output_root),
         "enabledThemes": [theme.name for theme in loader.themes if theme.enabled],
-        "copiedThemeFolders": copied_themes,
-        "selectedInjects": selected_injects,
-        "contentHash": content_hash.hexdigest(),
-        "bundles": bundle_report,
-        "patches": patches,
+        "syncedThemeAssets": synced_theme_assets,
+        "selectedInjects": len(list(_enabled_injects())),
+        "publishedInjections": len(injections),
+        "contentHash": content_hash,
+        "targets": target_report,
+        # An empty patch list makes older companion versions remove their
+        # generated bundle links while the new direct runtime takes over.
+        "patches": [],
     }
-    _atomic_write(output_root / "build-report.json", json.dumps(report, indent=2) + "\n")
+    skin = {
+        "name": THEME_DISPLAY_NAME,
+        "author": "CSS Loader contributors",
+        "description": "Runtime state host for the CSS Loader Millennium companion.",
+        "version": "1.0.0",
+        "Patches": [],
+    }
 
-    # The build report is the source of truth used by the companion. Remove
-    # bundles from older profiles only after publishing the new report so a
-    # running Steam session never observes a report that references a deleted
-    # file.
-    for existing_bundle in generated_root.glob("*.css"):
-        if existing_bundle.name not in expected_bundle_names:
-            existing_bundle.unlink()
+    _remove_legacy_compiler_output(output_root)
+    _atomic_write(output_root / "skin.json", json.dumps(skin, indent=2) + "\n")
+    # Publish state before its revision. The companion only accepts a state
+    # whose hash matches the latest report, avoiding partially-written updates.
+    _atomic_write(
+        output_root / STATE_FILE,
+        json.dumps(state, indent=2, ensure_ascii=False) + "\n",
+    )
+    _atomic_write(output_root / "build-report.json", json.dumps(report, indent=2) + "\n")
     Log(
-        f"Generated Millennium theme '{THEME_NAME}' with "
-        f"{selected_injects} selected injects across {len(bundles)} target bundles"
+        f"Published {len(injections)} direct CSS Loader injections "
+        f"across {len(target_report)} Millennium targets"
     )
     return report
 

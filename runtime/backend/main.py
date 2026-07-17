@@ -242,9 +242,10 @@ class Plugin:
 
         millennium_theme_mode = use_millennium_theme_runtime()
         if millennium_theme_mode:
-            Log("Using Millennium generated-theme runtime; external CDP injection is disabled")
-        else:
-            create_steam_symlink()
+            Log("Using Millennium direct-injection runtime; external CDP injection is disabled")
+        # Directly injected CSS keeps CSS Loader's /themes_custom asset URLs.
+        # Maintain the same Steam-side path in both runtime modes.
+        create_steam_symlink()
 
         self.loader = Loader()
         await self.loader.load(False)

@@ -7,10 +7,12 @@ from unittest.mock import AsyncMock
 
 from css_millennium import (
     KNOWN_TARGETS,
+    PROTOCOL_VERSION,
     RUNTIME_MODE,
+    STATE_FILE,
     THEME_DISPLAY_NAME,
     _enabled_injects,
-    _rewrite_asset_urls,
+    _sync_active_theme_assets,
     _target_for_tab,
     _targets_for_tab,
     _translate_classes,
@@ -67,28 +69,6 @@ class MillenniumCompilerTests(unittest.TestCase):
             '.newClass, [class*="newClass"] { color: red; }',
         )
 
-    def test_asset_urls_are_rebased_into_generated_theme(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            themes_root = Path(temporary) / "themes"
-            source_css = themes_root / "Example" / "styles" / "theme.css"
-            source_css.parent.mkdir(parents=True)
-            css = 'a { background: url("../images/background.png"); }'
-            self.assertEqual(
-                _rewrite_asset_urls(css, source_css, themes_root),
-                'a { background: url("../assets/themes/Example/images/background.png"); }',
-            )
-
-    def test_legacy_themes_custom_urls_are_rebased(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            themes_root = Path(temporary) / "themes"
-            source_css = themes_root / "Example" / "theme.css"
-            source_css.parent.mkdir(parents=True)
-            css = 'a { background: url("/themes_custom/Example/image.png"); }'
-            self.assertEqual(
-                _rewrite_asset_urls(css, source_css, themes_root),
-                'a { background: url("../assets/themes/Example/image.png"); }',
-            )
-
     def test_generated_component_css_takes_precedence_over_placeholder_path(self):
         with tempfile.TemporaryDirectory() as temporary:
             themes_root = Path(temporary) / "themes"
@@ -116,14 +96,81 @@ class MillenniumCompilerTests(unittest.TestCase):
 
             self.assertEqual(report["selectedInjects"], 1)
             self.assertEqual(report["runtimeMode"], RUNTIME_MODE)
-            self.assertIn("bigpicture", report["bundles"])
-            self.assertIn(
-                "--obsidian-main-color: #111111",
-                (output_root / "generated" / "bigpicture.css").read_text(encoding="utf-8"),
-            )
+            self.assertEqual(report["protocolVersion"], PROTOCOL_VERSION)
+            self.assertIn("bigpicture", report["targets"])
+            state = json.loads((output_root / STATE_FILE).read_text(encoding="utf-8"))
+            self.assertEqual(state["contentHash"], report["contentHash"])
+            self.assertEqual(len(state["injections"]), 1)
+            self.assertIn("--obsidian-main-color: #111111", state["injections"][0]["css"])
             skin = json.loads((output_root / "skin.json").read_text(encoding="utf-8"))
             self.assertEqual(skin["name"], THEME_DISPLAY_NAME)
-            self.assertIn("overlay mode", skin["description"].lower())
+            self.assertEqual(skin["Patches"], [])
+
+    def test_inline_svg_data_urls_are_published_byte_for_byte(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            themes_root = Path(temporary) / "themes"
+            theme_root = themes_root / "Animated PSP Waves Background"
+            output_root = Path(temporary) / "output"
+            theme_root.mkdir(parents=True)
+            source_css = theme_root / "wave.css"
+            svg_css = (
+                ":root { --wave: url(\"data:image/svg+xml,%3Csvg%3E"
+                "%3Cg filter='url(%23blur1)'/%3E%3C/svg%3E\"); }"
+            )
+            source_css.write_text(svg_css, encoding="utf-8")
+            theme = SimpleNamespace(
+                enabled=True,
+                name="Animated PSP Waves Background",
+                themePath=str(theme_root),
+            )
+            inject = Inject(str(source_css), ["bigpicture"], theme)
+            inject.activate()
+
+            previous_injects = list(ALL_INJECTS)
+            try:
+                ALL_INJECTS.clear()
+                ALL_INJECTS.append(inject)
+                compile_millennium_theme(
+                    SimpleNamespace(themes=[theme]),
+                    output_root=output_root,
+                    themes_root=themes_root,
+                )
+            finally:
+                ALL_INJECTS.clear()
+                ALL_INJECTS.extend(previous_injects)
+
+            state = json.loads((output_root / STATE_FILE).read_text(encoding="utf-8"))
+            self.assertEqual(state["injections"][0]["css"], svg_css)
+            self.assertIn("filter='url(%23blur1)'", state["injections"][0]["css"])
+            self.assertNotIn("assets/themes", state["injections"][0]["css"])
+
+    def test_active_theme_assets_are_mirrored_without_css_rewriting(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            themes_root = root / "themes"
+            theme_root = themes_root / "Asset Theme"
+            destination = root / "steamui" / "themes_custom"
+            (theme_root / "images").mkdir(parents=True)
+            (theme_root / "images" / "background.png").write_bytes(b"image")
+            css = 'a { background: url("/themes_custom/Asset Theme/images/background.png"); }'
+            (theme_root / "theme.css").write_text(css, encoding="utf-8")
+            theme = SimpleNamespace(enabled=True, name="Asset Theme", themePath=str(theme_root))
+
+            synced = _sync_active_theme_assets(
+                SimpleNamespace(themes=[theme]),
+                themes_root,
+                destination,
+            )
+
+            self.assertEqual(synced, ["Asset Theme"])
+            self.assertEqual(
+                (destination / "Asset Theme" / "theme.css").read_text(encoding="utf-8"),
+                css,
+            )
+            self.assertEqual(
+                (destination / "Asset Theme" / "images" / "background.png").read_bytes(),
+                b"image",
+            )
 
     def test_reactivated_payload_moves_to_end_of_decky_cascade(self):
         theme = SimpleNamespace(name="Example")
@@ -144,7 +191,7 @@ class MillenniumCompilerTests(unittest.TestCase):
             ALL_INJECTS.clear()
             ALL_INJECTS.extend(previous_injects)
 
-    def test_regeneration_removes_disabled_theme_assets_and_stale_bundles(self):
+    def test_direct_publish_removes_legacy_assets_and_stale_bundles(self):
         with tempfile.TemporaryDirectory() as temporary:
             themes_root = Path(temporary) / "themes"
             output_root = Path(temporary) / "output"
@@ -167,9 +214,11 @@ class MillenniumCompilerTests(unittest.TestCase):
                 ALL_INJECTS.clear()
                 ALL_INJECTS.extend(previous_injects)
 
-            self.assertEqual(report["bundles"], {})
+            self.assertEqual(report["targets"], {})
             self.assertFalse(old_theme_assets.exists())
             self.assertFalse((generated_root / "desktop.css").exists())
+            state = json.loads((output_root / STATE_FILE).read_text(encoding="utf-8"))
+            self.assertEqual(state["injections"], [])
 
 
 class MillenniumProfileTests(unittest.IsolatedAsyncioTestCase):

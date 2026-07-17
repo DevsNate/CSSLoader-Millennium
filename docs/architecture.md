@@ -15,8 +15,8 @@ flowchart LR
   T["Existing CSS Loader themes"] --> R["Python compatibility runtime"]
   C["Profiles and patch settings"] --> R
   M["Steam class translations"] --> R
-  R --> G["Generated CSS bundles and asset host"]
-  G --> P["Millennium overlay companion"]
+  R --> G["Ordered direct-injection state"]
+  G --> P["Millennium companion"]
   P --> D["Desktop and Big Picture"]
   P --> I["Quick Access, Main Menu, notifications"]
   S["Selected Millennium theme"] --> D
@@ -24,34 +24,38 @@ flowchart LR
   A["Desktop manager"] --> R
 ```
 
-## Runtime compiler
+## Runtime publisher
 
 `runtime/backend` retains CSS Loader's manifest reader, dependency handling,
 patch components, profiles, class translation, and theme-store integration. It
-compiles enabled payloads in activation order, rewrites local asset URLs, and
-writes a Millennium-served asset host whose optional selector entry is named
-**CSS Loader (Standalone)**.
+publishes every enabled payload in activation order without flattening bundles,
+rewriting asset URLs, or parsing nested CSS constructs. File-backed injects are
+read from their original source so legacy JavaScript-string escaping cannot
+leak into the direct protocol.
 
-The generated bundles are persisted on disk, so the desktop manager does not
-need to be running when Steam starts. Overlay mode leaves the user's selected
-Millennium theme untouched and layers the last compiled CSS Loader state over
-it. Selecting **CSS Loader (Standalone)** remains available for a CSS
-Loader-only presentation.
+CSS Loader's existing `/themes_custom/...` contract is preserved. When Steam's
+`themes_custom` path is not linked to the homebrew library, the publisher mirrors
+active theme files there without modifying their CSS.
+
+The publisher atomically writes `runtime-state.json` followed by a small
+`build-report.json` revision. The companion accepts a state only when both
+content hashes match. The user's selected Millennium theme remains untouched,
+and CSS Loader's ordered style elements are layered over it.
 
 ## Millennium companion
 
 The separately maintained
 [CSS Loader Companion for Millennium](https://github.com/DevsNate/CSSLoader-Companion-Millennium),
 pinned into this repository at `plugins/millennium` for release builds, is the
-primary overlay runtime. It synchronizes Desktop
-and Big Picture directly inside Steam, then reaches Quick Access, Main Menu,
-and notification toasts through Millennium's per-plugin Chrome DevTools
-Protocol proxy because those targets live in isolated BrowserViews.
+primary runtime. It reconciles individual `<style>` elements in Desktop and Big
+Picture, then does the same for Quick Access, Main Menu, and notification toasts
+through Millennium's per-plugin Chrome DevTools Protocol proxy because those
+targets live in isolated BrowserViews.
 
 This is not an external CDP setup: the project does not open port 8080, require
 Millennium `-dev` mode, or run a separate browser bridge. The generated theme
-directory is a persistent content host; it does not need to be the active
-Millennium theme.
+directory is only a local runtime-state mailbox; it does not need to be the
+active Millennium theme.
 
 ## Desktop manager
 
@@ -64,14 +68,13 @@ unrelated upstream backend.
 
 On a clean machine, first launch is an idempotent bootstrap: it creates the
 theme library, copies the backend, installs or migrates the companion, preserves
-the selected Millennium theme, and then starts the compiler. The generated
-Millennium theme folder is user-specific runtime output and is not published as
-a theme repository.
+the selected Millennium theme, and then starts the publisher. The local runtime
+folder is user-specific output and is not published as a theme repository.
 
 ## Data flow and ordering
 
 CSS Loader's cascade order is observable behavior. Toggling a component removes
-its old payload and appends its replacement, so the compiler tracks activation
-order rather than sorting by theme name or file path. Target bundles are kept
-separate; Quick Access or Main Menu CSS is never folded into Big Picture merely
-because all three are gamepad UI surfaces.
+its old payload and appends its replacement, so the publisher tracks activation
+order rather than sorting by theme name or file path. Each payload retains its
+own target match; Quick Access or Main Menu CSS is never folded into Big Picture
+merely because all three are gamepad UI surfaces.
