@@ -15,8 +15,6 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
-        with:
-          submodules: recursive
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
@@ -26,16 +24,11 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: |
-            plugins/millennium/package-lock.json
-            apps/desktop/package-lock.json
+          cache-dependency-path: apps/desktop/package-lock.json
       - name: Install Python dependencies
         run: python -m pip install -r runtime/backend/requirements-dev.txt
       - name: Install JavaScript dependencies
-        shell: pwsh
-        run: |
-          npm ci --prefix plugins/millennium
-          npm ci --prefix apps/desktop
+        run: npm ci --prefix apps/desktop
       - name: Build installer
         run: npm run build:release
       - name: Create checksum
@@ -48,41 +41,32 @@ jobs:
           }
 
           $msi = $msis[0]
-          $releaseVersion = if ($env:GITHUB_REF_NAME -like "v*") { $env:GITHUB_REF_NAME } else { "v1.1" }
+          $releaseVersion = if ($env:GITHUB_REF_NAME -like "v*") { $env:GITHUB_REF_NAME } else { "v1.2.0" }
           $releasePath = Join-Path $bundleDir "CSS-Loader-for-Millennium_${releaseVersion}_x64_en-US.msi"
           Move-Item -LiteralPath $msi.FullName -Destination $releasePath -Force
           $msi = Get-Item -LiteralPath $releasePath
 
-          $backendSource = "runtime/backend/dist/CSS Loader for Millennium Backend.exe"
-          $backendPath = Join-Path $bundleDir "CSS-Loader-for-Millennium-Backend_${releaseVersion}.exe"
-          Copy-Item -LiteralPath $backendSource -Destination $backendPath -Force
-          $backend = Get-Item -LiteralPath $backendPath
-
-          $checksumLines = foreach ($artifact in @($msi, $backend)) {
-            $stream = [System.IO.File]::OpenRead($artifact.FullName)
+          $stream = [System.IO.File]::OpenRead($msi.FullName)
+          try {
+            $sha256 = [System.Security.Cryptography.SHA256]::Create()
             try {
-              $sha256 = [System.Security.Cryptography.SHA256]::Create()
-              try {
-                $hashBytes = $sha256.ComputeHash($stream)
-              } finally {
-                $sha256.Dispose()
-              }
+              $hashBytes = $sha256.ComputeHash($stream)
             } finally {
-              $stream.Dispose()
+              $sha256.Dispose()
             }
-            $checksum = -join ($hashBytes | ForEach-Object { $_.ToString("x2") })
-            "$checksum  $($artifact.Name)"
+          } finally {
+            $stream.Dispose()
           }
-          $checksumLines | Set-Content -LiteralPath (Join-Path $bundleDir "SHA256SUMS.txt") -Encoding ascii
+          $checksum = -join ($hashBytes | ForEach-Object { $_.ToString("x2") })
+          "$checksum  $($msi.Name)" | Set-Content -LiteralPath (Join-Path $bundleDir "SHA256SUMS.txt") -Encoding ascii
       - uses: actions/upload-artifact@v7
         with:
           name: css-loader-for-millennium-msi
           path: |
             apps/desktop/src-tauri/target/release/bundle/msi/*.msi
-            apps/desktop/src-tauri/target/release/bundle/msi/*.exe
             apps/desktop/src-tauri/target/release/bundle/msi/SHA256SUMS.txt
           if-no-files-found: error
-      - name: Create draft tagged release
+      - name: Create tagged release
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
@@ -95,21 +79,14 @@ jobs:
           }
 
           $msi = $msis[0]
-          $backends = @(Get-ChildItem -LiteralPath $bundleDir -Filter "*.exe")
-          if ($backends.Count -ne 1) {
-            throw "Expected exactly one backend executable, found $($backends.Count)"
-          }
-          $backend = $backends[0]
           $checksum = Get-Item -LiteralPath (Join-Path $bundleDir "SHA256SUMS.txt")
           $notesPath = ".github/release-notes/$($env:GITHUB_REF_NAME).md"
           $arguments = @(
             "release", "create", $env:GITHUB_REF_NAME,
-            $msi.FullName, $backend.FullName,
+            $msi.FullName,
             $checksum.FullName,
             "--verify-tag",
-            "--draft",
-            "--prerelease",
-            "--title", "CSS Loader for Millennium $env:GITHUB_REF_NAME (Preview)"
+            "--title", "CSS Loader for Millennium $env:GITHUB_REF_NAME"
           )
 
           if (Test-Path -LiteralPath $notesPath) {
