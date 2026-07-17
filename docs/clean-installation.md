@@ -34,13 +34,13 @@ or profile.
 The backend writes the user's current combination to:
 
 ```text
-%STEAM%\millennium\themes\CSS Loader
+%STEAM%\millennium\plugins\css-loader-companion\runtime
 ```
 
-This directory is a local mailbox containing `runtime-state.json`, a matching
-build report, and a metadata-only `skin.json`. The state contains CSS Loader's
-resolved, ordered injects without bundle conversion or asset rewriting. It is
-deliberately not distributed as a public Millennium theme.
+This directory is a local mailbox containing `runtime-state.json` and a
+matching `build-report.json`. The state contains CSS Loader's resolved, ordered
+injects without bundle conversion or asset rewriting. No `skin.json` is
+generated and CSS Loader does not appear as a Millennium theme.
 
 Local images and fonts continue using CSS Loader's `/themes_custom/...` path.
 The backend links that path to the homebrew library when possible and otherwise
@@ -56,6 +56,10 @@ current user's Windows Startup folder. The first launch of the onedir release
 stops that process, removes both known legacy Startup filenames, and registers
 the installed onedir launcher instead. Companion installation and updates are
 owned exclusively by the companion's separate repository.
+
+The first successful publish also removes the obsolete generated mailbox at
+`%STEAM%\millennium\themes\CSS Loader`. The publisher refuses to create a
+partial plugin directory when the companion is not installed.
 
 All theme downloads, profiles, patch values, and runtime configuration remain
 in the user's theme library.

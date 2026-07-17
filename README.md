@@ -144,7 +144,8 @@ reference warning in [Compatibility verification](docs/verification.md).
 > The stock CSS Loader standalone backend is not the correct runtime for this
 > setup; this Millennium-aware backend and its companion must be installed.
 
-1. Install Millennium and the separately released CSS Loader Companion plugin.
+1. Install Millennium and CSS Loader Companion 1.2.0 or newer from its
+   separate release.
 2. Download and install the latest MSI from this repository's Releases page.
 3. Open **CSS Loader for Millennium**. First-run setup creates the theme library,
    registers the bundled onedir backend for login startup, and publishes a valid empty state.
@@ -158,9 +159,9 @@ install, or update the separately released companion. The desktop app creates
 `%USERPROFILE%\homebrew\themes` when it does not exist. The backend publishes
 the resolved state and the companion applies it inside Steam.
 
-The local `Steam\millennium\themes\CSS Loader` folder is generated uniquely for
-each user. It is a runtime-state mailbox, not a separately published Marketplace
-theme.
+The backend stores its generated runtime mailbox inside the installed companion
+at `Steam\millennium\plugins\css-loader-companion\runtime`. It does not create
+or select a Millennium theme.
 See [Clean installation](docs/clean-installation.md) for the complete first-run
 contract and migration behavior.
 

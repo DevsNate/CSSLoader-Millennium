@@ -53,9 +53,9 @@ through Millennium's per-plugin Chrome DevTools Protocol proxy because those
 targets live in isolated BrowserViews.
 
 This is not an external CDP setup: the project does not open port 8080, require
-Millennium `-dev` mode, or run a separate browser bridge. The generated theme
-directory is only a local runtime-state mailbox; it does not need to be the
-active Millennium theme.
+Millennium `-dev` mode, or run a separate browser bridge. The generated runtime
+mailbox lives inside the installed companion and does not create or select a
+Millennium theme.
 
 ## Desktop manager
 
@@ -66,8 +66,9 @@ installer, and `themes.activeTheme` remains untouched.
 
 On a clean machine, first launch is an idempotent bootstrap: it creates the
 theme library, removes legacy onefile Startup copies, registers the installed
-onedir launcher for login startup, and starts the publisher. The local runtime
-folder is user-specific output and is not published as a theme repository.
+onedir launcher for login startup, and starts the publisher. The publisher
+requires the separately installed companion and writes only to its `runtime`
+subdirectory.
 
 ## Data flow and ordering
 

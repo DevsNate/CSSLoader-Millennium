@@ -8,15 +8,16 @@ from unittest.mock import AsyncMock, patch
 from css_millennium import (
     KNOWN_TARGETS,
     PROTOCOL_VERSION,
+    REPORT_FILE,
     RUNTIME_MODE,
     STATE_FILE,
-    THEME_DISPLAY_NAME,
+    _prepare_live_runtime_path,
     _enabled_injects,
     _sync_active_theme_assets,
     _target_for_tab,
     _targets_for_tab,
     _translate_classes,
-    compile_millennium_theme,
+    publish_millennium_runtime,
 )
 from css_inject import ALL_INJECTS, CLASS_MAPPINGS, Inject
 from css_loader import Loader
@@ -44,6 +45,48 @@ class FakeTheme:
 
 
 class MillenniumCompilerTests(unittest.TestCase):
+    def test_live_runtime_requires_the_installed_companion(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            steam_root = Path(temporary) / "Steam"
+            plugin_root = steam_root / "millennium" / "plugins" / "css-loader-companion"
+
+            with patch("css_millennium.get_steam_path", return_value=str(steam_root)):
+                with self.assertRaisesRegex(FileNotFoundError, "Companion is not installed"):
+                    _prepare_live_runtime_path()
+
+            self.assertFalse(plugin_root.exists())
+
+    def test_live_runtime_moves_into_plugin_and_removes_legacy_theme_mailbox(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            steam_root = Path(temporary) / "Steam"
+            plugin_root = steam_root / "millennium" / "plugins" / "css-loader-companion"
+            plugin_root.mkdir(parents=True)
+            (plugin_root / "plugin.json").write_text("{}", encoding="utf-8")
+            legacy_root = steam_root / "millennium" / "themes" / "CSS Loader"
+            legacy_root.mkdir(parents=True)
+            (legacy_root / REPORT_FILE).write_text("{}", encoding="utf-8")
+            (legacy_root / STATE_FILE).write_text("{}", encoding="utf-8")
+            (legacy_root / "skin.json").write_text("{}", encoding="utf-8")
+
+            previous_injects = list(ALL_INJECTS)
+            try:
+                ALL_INJECTS.clear()
+                with patch("css_millennium.get_steam_path", return_value=str(steam_root)):
+                    report = publish_millennium_runtime(
+                        SimpleNamespace(themes=[]),
+                        themes_root=Path(temporary) / "themes",
+                    )
+            finally:
+                ALL_INJECTS.clear()
+                ALL_INJECTS.extend(previous_injects)
+
+            runtime_root = plugin_root / "runtime"
+            self.assertEqual(Path(report["output"]), runtime_root)
+            self.assertTrue((runtime_root / REPORT_FILE).is_file())
+            self.assertTrue((runtime_root / STATE_FILE).is_file())
+            self.assertFalse((runtime_root / "skin.json").exists())
+            self.assertFalse(legacy_root.exists())
+
     def test_known_cssloader_targets_map_to_millennium_windows(self):
         self.assertEqual(_target_for_tab("Steam|SteamLibraryWindow"), KNOWN_TARGETS["desktop"])
         self.assertEqual(_target_for_tab("~Valve Steam Gamepad/default~"), KNOWN_TARGETS["bigpicture"])
@@ -85,7 +128,7 @@ class MillenniumCompilerTests(unittest.TestCase):
             try:
                 ALL_INJECTS.clear()
                 ALL_INJECTS.append(component)
-                report = compile_millennium_theme(
+                report = publish_millennium_runtime(
                     SimpleNamespace(themes=[theme]),
                     output_root=output_root,
                     themes_root=themes_root,
@@ -102,9 +145,7 @@ class MillenniumCompilerTests(unittest.TestCase):
             self.assertEqual(state["contentHash"], report["contentHash"])
             self.assertEqual(len(state["injections"]), 1)
             self.assertIn("--obsidian-main-color: #111111", state["injections"][0]["css"])
-            skin = json.loads((output_root / "skin.json").read_text(encoding="utf-8"))
-            self.assertEqual(skin["name"], THEME_DISPLAY_NAME)
-            self.assertEqual(skin["Patches"], [])
+            self.assertFalse((output_root / "skin.json").exists())
 
     def test_inline_svg_data_urls_are_published_byte_for_byte(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -130,7 +171,7 @@ class MillenniumCompilerTests(unittest.TestCase):
             try:
                 ALL_INJECTS.clear()
                 ALL_INJECTS.append(inject)
-                compile_millennium_theme(
+                publish_millennium_runtime(
                     SimpleNamespace(themes=[theme]),
                     output_root=output_root,
                     themes_root=themes_root,
@@ -205,7 +246,7 @@ class MillenniumCompilerTests(unittest.TestCase):
             previous_injects = list(ALL_INJECTS)
             try:
                 ALL_INJECTS.clear()
-                report = compile_millennium_theme(
+                report = publish_millennium_runtime(
                     SimpleNamespace(themes=[]),
                     output_root=output_root,
                     themes_root=themes_root,

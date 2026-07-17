@@ -250,7 +250,13 @@ class Plugin:
         self.loader = Loader()
         await self.loader.load(False)
         if millennium_theme_mode:
-            await self.loader.commit_runtime()
+            try:
+                await self.loader.commit_runtime()
+            except FileNotFoundError as error:
+                # Keep the desktop API available when the independently
+                # installed companion is missing. A later reset, theme change,
+                # or backend restart will publish after the plugin is installed.
+                Log(str(error))
 
         if (store_or_file_config("watch")):
             await self.toggle_watch_state(self)

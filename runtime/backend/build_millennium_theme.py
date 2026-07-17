@@ -3,7 +3,7 @@ import asyncio
 import json
 from pathlib import Path
 
-from css_millennium import build_from_disk, default_millennium_theme_path
+from css_millennium import build_from_disk, default_millennium_runtime_path
 
 
 def main() -> None:
@@ -11,7 +11,7 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=Path,
-        default=default_millennium_theme_path(),
+        default=default_millennium_runtime_path(),
         help="Destination for the Millennium runtime state files.",
     )
     args = parser.parse_args()

@@ -21,8 +21,8 @@ class Loader:
 
     async def commit_runtime(self, remove_all_first : bool = False):
         if self.millennium_theme_mode:
-            from css_millennium import compile_millennium_theme
-            return compile_millennium_theme(self)
+            from css_millennium import publish_millennium_runtime
+            return publish_millennium_runtime(self)
 
         return await commit_all(remove_all_first=remove_all_first)
 

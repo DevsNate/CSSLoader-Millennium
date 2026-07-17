@@ -12,8 +12,9 @@ from css_loader import Loader
 from css_utils import Log, get_steam_path, get_theme_path
 
 
-THEME_NAME = "CSS Loader"
-THEME_DISPLAY_NAME = "CSS Loader Runtime"
+COMPANION_ID = "css-loader-companion"
+RUNTIME_DIRECTORY = "runtime"
+REPORT_FILE = "build-report.json"
 RUNTIME_MODE = "direct"
 PROTOCOL_VERSION = 1
 STATE_FILE = "runtime-state.json"
@@ -34,11 +35,22 @@ KNOWN_TARGETS = {
 }
 
 
-def default_millennium_theme_path() -> Path:
+def default_millennium_plugin_path() -> Path:
+    configured = os.getenv("CSS_LOADER_MILLENNIUM_THEME_PATH")
+    if configured:
+        return Path(configured).parent
+    return Path(get_steam_path()) / "millennium" / "plugins" / COMPANION_ID
+
+
+def default_millennium_runtime_path() -> Path:
     configured = os.getenv("CSS_LOADER_MILLENNIUM_THEME_PATH")
     if configured:
         return Path(configured)
-    return Path(get_steam_path()) / "millennium" / "themes" / THEME_NAME
+    return default_millennium_plugin_path() / RUNTIME_DIRECTORY
+
+
+def legacy_millennium_theme_path() -> Path:
+    return Path(get_steam_path()) / "millennium" / "themes" / "CSS Loader"
 
 
 def _target_for_tab(tab: str) -> MillenniumTarget:
@@ -128,11 +140,40 @@ def _resolved_inject_css(inject, themes_root: Path) -> tuple[str, str]:
     return inject.css or "", "generated CSS"
 
 
-def _remove_legacy_compiler_output(output_root: Path) -> None:
+def _remove_obsolete_runtime_output(output_root: Path) -> None:
     for directory_name in ("generated", "assets"):
         directory = output_root / directory_name
         if directory.exists():
             shutil.rmtree(directory)
+    skin = output_root / "skin.json"
+    if skin.exists():
+        skin.unlink()
+
+
+def _remove_legacy_theme_mailbox() -> None:
+    legacy_root = legacy_millennium_theme_path()
+    for file_name in (REPORT_FILE, STATE_FILE, "skin.json"):
+        path = legacy_root / file_name
+        if path.is_file():
+            path.unlink()
+    _remove_obsolete_runtime_output(legacy_root)
+    try:
+        legacy_root.rmdir()
+    except OSError:
+        # Preserve the directory if it contains anything CSS Loader did not
+        # generate.
+        pass
+
+
+def _prepare_live_runtime_path() -> Path:
+    plugin_root = default_millennium_plugin_path()
+    if not (plugin_root / "plugin.json").is_file():
+        raise FileNotFoundError(
+            "CSS Loader Companion is not installed in Millennium. "
+            "Install the companion before starting CSS Loader for Millennium."
+        )
+    _remove_legacy_theme_mailbox()
+    return plugin_root / RUNTIME_DIRECTORY
 
 
 def _sync_active_theme_assets(loader: Loader, themes_root: Path, destination_root: Path) -> list[str]:
@@ -165,19 +206,14 @@ def _sync_active_theme_assets(loader: Loader, themes_root: Path, destination_roo
     return synced
 
 
-def compile_millennium_theme(
+def publish_millennium_runtime(
     loader: Loader,
     output_root: Path | str | None = None,
     themes_root: Path | str | None = None,
 ) -> dict:
-    """Publish CSS Loader's resolved injects for the Millennium companion.
-
-    Despite the historical function name, this no longer compiles or rewrites
-    CSS bundles. The app publishes exact translated payloads in CSS Loader
-    cascade order and the companion applies them as individual style elements.
-    """
+    """Publish resolved CSS Loader injects into the installed companion."""
     publish_to_live_runtime = output_root is None
-    output_root = Path(output_root) if output_root is not None else default_millennium_theme_path()
+    output_root = Path(output_root) if output_root is not None else _prepare_live_runtime_path()
     themes_root = Path(themes_root) if themes_root is not None else Path(get_theme_path())
     output_root.mkdir(parents=True, exist_ok=True)
 
@@ -225,8 +261,7 @@ def compile_millennium_theme(
         "injections": injections,
     }
     report = {
-        "theme": THEME_NAME,
-        "themeDisplayName": THEME_DISPLAY_NAME,
+        "companion": COMPANION_ID,
         "runtimeMode": RUNTIME_MODE,
         "protocolVersion": PROTOCOL_VERSION,
         "stateFile": STATE_FILE,
@@ -241,23 +276,14 @@ def compile_millennium_theme(
         # generated bundle links while the new direct runtime takes over.
         "patches": [],
     }
-    skin = {
-        "name": THEME_DISPLAY_NAME,
-        "author": "CSS Loader contributors",
-        "description": "Runtime state host for the CSS Loader Millennium companion.",
-        "version": "1.2",
-        "Patches": [],
-    }
-
-    _remove_legacy_compiler_output(output_root)
-    _atomic_write(output_root / "skin.json", json.dumps(skin, indent=2) + "\n")
+    _remove_obsolete_runtime_output(output_root)
     # Publish state before its revision. The companion only accepts a state
     # whose hash matches the latest report, avoiding partially-written updates.
     _atomic_write(
         output_root / STATE_FILE,
         json.dumps(state, indent=2, ensure_ascii=False) + "\n",
     )
-    _atomic_write(output_root / "build-report.json", json.dumps(report, indent=2) + "\n")
+    _atomic_write(output_root / REPORT_FILE, json.dumps(report, indent=2) + "\n")
     Log(
         f"Published {len(injections)} direct CSS Loader injections "
         f"across {len(target_report)} Millennium targets"
@@ -269,4 +295,4 @@ async def build_from_disk(output_root: Path | str | None = None) -> dict:
     initialize_class_mappings()
     loader = Loader()
     await loader.load(False)
-    return compile_millennium_theme(loader, output_root=output_root)
+    return publish_millennium_runtime(loader, output_root=output_root)
