@@ -34,8 +34,6 @@ if ($LASTEXITCODE -ne 0) {
   throw "Millennium parity audit could not be imported"
 }
 
-& (Join-Path $PSScriptRoot "build-plugin.ps1") -CleanInstall:$CleanInstall
-
 Push-Location $desktopRoot
 try {
   if ($CleanInstall -or -not (Test-Path -LiteralPath "node_modules" -PathType Container)) {

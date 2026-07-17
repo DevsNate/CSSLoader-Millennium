@@ -3,8 +3,6 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 
 $rootPackage = Get-Content -Raw (Join-Path $repoRoot "package.json") | ConvertFrom-Json
 $desktopPackage = Get-Content -Raw (Join-Path $repoRoot "apps\desktop\package.json") | ConvertFrom-Json
-$companionPackage = Get-Content -Raw (Join-Path $repoRoot "plugins\millennium\package.json") | ConvertFrom-Json
-$companionManifest = Get-Content -Raw (Join-Path $repoRoot "plugins\millennium\plugin.json") | ConvertFrom-Json
 $cargoManifest = Get-Content -Raw (Join-Path $repoRoot "apps\desktop\src-tauri\Cargo.toml")
 $generatedThemeSource = Get-Content -Raw (Join-Path $repoRoot "runtime\backend\css_millennium.py")
 
@@ -18,8 +16,6 @@ $versions = [ordered]@{
   root = $rootPackage.version
   desktop = $desktopPackage.version
   cargo = $cargoVersionMatch.Groups[1].Value
-  companionPackage = $companionPackage.version
-  companionManifest = $companionManifest.version
   generatedTheme = $themeVersionMatch.Groups[1].Value
 }
 
@@ -29,8 +25,6 @@ $expectedVersions = @{
   root = $expected
   desktop = $packagingVersion
   cargo = $packagingVersion
-  companionPackage = $expected
-  companionManifest = $expected
   generatedTheme = $expected
 }
 $mismatches = @($versions.GetEnumerator() | Where-Object { $_.Value -ne $expectedVersions[$_.Key] })

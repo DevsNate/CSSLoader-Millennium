@@ -1,4 +1,7 @@
 import { Body, fetch } from "@tauri-apps/api/http";
+
+const BACKEND_REQUEST_TIMEOUT_SECONDS = 300;
+
 export interface Server {
   callPluginMethod<TArgs = {}, TRes = {}>(
     methodName: string,
@@ -18,6 +21,7 @@ export const server: Server = {
   async callPluginMethod(methodName: string, args: any) {
     return fetch("http://127.0.0.1:35821/req", {
       method: "POST",
+      timeout: BACKEND_REQUEST_TIMEOUT_SECONDS,
       body: Body.json({
         method: methodName,
         args: args,

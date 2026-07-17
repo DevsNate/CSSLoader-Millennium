@@ -45,9 +45,9 @@ and CSS Loader's ordered style elements are layered over it.
 ## Millennium companion
 
 The separately maintained
-[CSS Loader Companion for Millennium](https://github.com/DevsNate/CSSLoader-Companion-Millennium),
-pinned into this repository at `plugins/millennium` for release builds, is the
-primary runtime. It reconciles individual `<style>` elements in Desktop and Big
+[CSS Loader Companion for Millennium](https://github.com/DevsNate/CSSLoader-Companion-Millennium)
+is distributed independently through its own repository and is the primary
+runtime. It reconciles individual `<style>` elements in Desktop and Big
 Picture, then does the same for Quick Access, Main Menu, and notification toasts
 through Millennium's per-plugin Chrome DevTools Protocol proxy because those
 targets live in isolated BrowserViews.
@@ -60,15 +60,13 @@ active Millennium theme.
 ## Desktop manager
 
 `apps/desktop` is a Tauri application for browsing installed themes, changing
-profiles and patch settings, installing the bundled backend, and installing or
-enabling the companion plugin. Installation only enables the companion and
-preserves `themes.activeTheme`, making overlay mode the default. Release builds
-embed both runtime artifacts so the installer does not replace them with an
-unrelated upstream backend.
+profiles and patch settings, and running the bundled onedir backend. The
+separately released companion is neither bundled nor modified by the desktop
+installer, and `themes.activeTheme` remains untouched.
 
 On a clean machine, first launch is an idempotent bootstrap: it creates the
-theme library, copies the backend, installs or migrates the companion, preserves
-the selected Millennium theme, and then starts the publisher. The local runtime
+theme library, removes legacy onefile Startup copies, registers the installed
+onedir launcher for login startup, and starts the publisher. The local runtime
 folder is user-specific output and is not published as a theme repository.
 
 ## Data flow and ordering

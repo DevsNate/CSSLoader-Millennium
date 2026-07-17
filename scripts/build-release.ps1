@@ -18,7 +18,6 @@ if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
 }
 
 & (Join-Path $PSScriptRoot "build-backend.ps1")
-& (Join-Path $PSScriptRoot "build-plugin.ps1") -CleanInstall:$CleanInstall
 & (Join-Path $PSScriptRoot "sync-desktop.ps1")
 
 Push-Location $desktopRoot

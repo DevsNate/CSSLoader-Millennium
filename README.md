@@ -144,18 +144,19 @@ reference warning in [Compatibility verification](docs/verification.md).
 > The stock CSS Loader standalone backend is not the correct runtime for this
 > setup; this Millennium-aware backend and its companion must be installed.
 
-1. Install Millennium and start Steam once so Millennium creates its config.
+1. Install Millennium and the separately released CSS Loader Companion plugin.
 2. Download and install the latest MSI from this repository's Releases page.
 3. Open **CSS Loader for Millennium**. First-run setup creates the theme library,
-   installs the backend and companion, and publishes a valid empty state.
+   registers the bundled onedir backend for login startup, and publishes a valid empty state.
 4. Leave your preferred Millennium theme selected; CSS Loader is layered over it.
 5. Restart Steam once, then manage themes, profiles, and every patch option from
    the desktop app.
 
-The installer places the backend in the current user's Windows Startup folder,
-copies and enables the companion in Steam, and creates
+The MSI installs the onedir backend beside the desktop app and registers its
+launcher in the current user's Windows login autorun key. It does not bundle,
+install, or update the separately released companion. The desktop app creates
 `%USERPROFILE%\homebrew\themes` when it does not exist. The backend publishes
-the app's resolved state and the companion applies it inside Steam.
+the resolved state and the companion applies it inside Steam.
 
 The local `Steam\millennium\themes\CSS Loader` folder is generated uniquely for
 each user. It is a runtime-state mailbox, not a separately published Marketplace
@@ -174,12 +175,11 @@ contract and migration behavior.
 - Millennium and Steam for end-to-end testing
 
 ```powershell
-git clone --recurse-submodules https://github.com/DevsNate/CSSLoader-Millennium.git
+git clone https://github.com/DevsNate/CSSLoader-Millennium.git
 cd CSSLoader-Millennium
 
 python -m venv .venv
 .\.venv\Scripts\python -m pip install -r runtime/backend/requirements-dev.txt
-npm ci --prefix plugins/millennium
 npm ci --prefix apps/desktop
 
 npm run verify
@@ -188,14 +188,13 @@ npm run build:release
 
 The MSI is written beneath
 `apps/desktop/src-tauri/target/release/bundle/msi/`. Individual commands are
-available for `build:backend`, `build:plugin`, and `sync:desktop`.
+available for `build:backend` and `sync:desktop`.
 
 ## Repository map
 
 | Path | Purpose |
 | --- | --- |
 | `runtime/backend` | CSS Loader compatibility logic and direct-state publisher |
-| `plugins/millennium` | Pinned [CSS Loader Companion for Millennium](https://github.com/DevsNate/CSSLoader-Companion-Millennium) submodule used for MSI builds |
 | `apps/desktop` | Tauri theme manager and bundled installer |
 | `tools/audit` | Reference capture, parity, and Steam class-map auditing |
 | `docs` | Architecture and verification methodology |

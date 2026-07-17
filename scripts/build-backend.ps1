@@ -21,12 +21,13 @@ try {
   Pop-Location
 }
 
-$artifact = Join-Path $backendRoot "dist\CSS Loader for Millennium Backend.exe"
-if (-not (Test-Path -LiteralPath $artifact -PathType Leaf)) {
-  throw "Backend build completed without producing $artifact"
+$artifact = Join-Path $backendRoot "dist\CSS Loader for Millennium Backend"
+$launcher = Join-Path $artifact "CSS Loader for Millennium Backend.exe"
+if (-not (Test-Path -LiteralPath $launcher -PathType Leaf)) {
+  throw "Backend build completed without producing $launcher"
 }
 
-$stream = [System.IO.File]::OpenRead($artifact)
+$stream = [System.IO.File]::OpenRead($launcher)
 try {
   $sha256 = [System.Security.Cryptography.SHA256]::Create()
   try {
@@ -39,5 +40,9 @@ try {
 }
 
 $hash = -join ($hashBytes | ForEach-Object { $_.ToString("x2") })
-Write-Output "Backend: $artifact"
-Write-Output "SHA256: $hash"
+$files = Get-ChildItem -LiteralPath $artifact -Recurse -File
+Write-Output "Backend directory: $artifact"
+Write-Output "Launcher: $launcher"
+Write-Output "Launcher SHA256: $hash"
+Write-Output "Files: $($files.Count)"
+Write-Output "Installed bytes: $(($files | Measure-Object -Property Length -Sum).Sum)"

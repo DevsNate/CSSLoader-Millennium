@@ -40,9 +40,9 @@ export function DownloadBackendPage({
           onboarding ? (
             <>
               <span>
-                CSS Loader will create your theme library, install its backend and Millennium
-                Companion, and generate the local overlay automatically. Keep your preferred
-                Millennium theme selected; CSS Loader layers on top of it. No external CDP port or
+                CSS Loader will create your theme library, register its bundled onedir backend for
+                login startup, and generate the local overlay automatically. Install the separately
+                released Millennium Companion before using the overlay. No external CDP port or
                 Steam developer mode is required.
               </span>
             </>

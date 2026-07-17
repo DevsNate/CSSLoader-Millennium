@@ -10,8 +10,6 @@
   },
   "scripts": {
     "build:backend": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/build-backend.ps1",
-    "build:plugin": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/build-plugin.ps1",
-    "install:plugin": "powershell -NoProfile -ExecutionPolicy Bypass -File ./tools/install/install_millennium_plugin.ps1",
     "sync:desktop": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/sync-desktop.ps1",
     "build:release": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/build-release.ps1",
     "verify:versions": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify-versions.ps1",

@@ -1,6 +1,5 @@
 param(
-  [string]$BackendPath = "..\..\runtime\backend\dist\CSS Loader for Millennium Backend.exe",
-  [string]$PluginPath = "..\..\plugins\millennium"
+  [string]$BackendPath = "..\..\runtime\backend\dist\CSS Loader for Millennium Backend"
 )
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
@@ -13,15 +12,19 @@ function Resolve-ProjectPath([string]$PathValue) {
 }
 
 $source = Resolve-ProjectPath $BackendPath
-$pluginSource = Resolve-ProjectPath $PluginPath
 $resourceDirectory = Join-Path $projectRoot "src-tauri\resources"
-$destination = Join-Path $resourceDirectory "CSS Loader for Millennium Backend.exe"
+$destination = Join-Path $resourceDirectory "css-loader-backend"
+$legacyDestination = Join-Path $resourceDirectory "CSS Loader for Millennium Backend.exe"
 $pluginDestination = Join-Path $resourceDirectory "css-loader-companion"
 $legacyBackendDestination = Join-Path $resourceDirectory "CssLoader-Standalone-Headless.exe"
 $legacyPluginDestination = Join-Path $resourceDirectory "css-loader-runtime"
 
-if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
+if (-not (Test-Path -LiteralPath $source -PathType Container)) {
   throw "Millennium backend was not found at $source"
+}
+$sourceLauncher = Join-Path $source "CSS Loader for Millennium Backend.exe"
+if (-not (Test-Path -LiteralPath $sourceLauncher -PathType Leaf)) {
+  throw "Millennium backend launcher was not found at $sourceLauncher"
 }
 
 New-Item -ItemType Directory -Path $resourceDirectory -Force | Out-Null
@@ -29,39 +32,23 @@ New-Item -ItemType Directory -Path $resourceDirectory -Force | Out-Null
 if (Test-Path -LiteralPath $legacyBackendDestination -PathType Leaf) {
   Remove-Item -LiteralPath $legacyBackendDestination -Force
 }
+if (Test-Path -LiteralPath $legacyDestination -PathType Leaf) {
+  Remove-Item -LiteralPath $legacyDestination -Force
+}
+if (Test-Path -LiteralPath $destination -PathType Container) {
+  Remove-Item -LiteralPath $destination -Recurse -Force
+}
 if (Test-Path -LiteralPath $legacyPluginDestination -PathType Container) {
   Remove-Item -LiteralPath $legacyPluginDestination -Recurse -Force
 }
-
-Copy-Item -LiteralPath $source -Destination $destination -Force
-
-$pluginFiles = @(
-  "plugin.json",
-  "backend\main.lua",
-  ".millennium\Dist\index.js"
-)
-
-$obsoletePluginManifest = Join-Path $pluginDestination "package.json"
-if (Test-Path -LiteralPath $obsoletePluginManifest -PathType Leaf) {
-  Remove-Item -LiteralPath $obsoletePluginManifest -Force
-}
-$obsoletePluginSource = Join-Path $pluginDestination "frontend\index.tsx"
-if (Test-Path -LiteralPath $obsoletePluginSource -PathType Leaf) {
-  Remove-Item -LiteralPath $obsoletePluginSource -Force
+if (Test-Path -LiteralPath $pluginDestination -PathType Container) {
+  Remove-Item -LiteralPath $pluginDestination -Recurse -Force
 }
 
-foreach ($relativePath in $pluginFiles) {
-  $pluginFile = Join-Path $pluginSource $relativePath
-  if (-not (Test-Path -LiteralPath $pluginFile -PathType Leaf)) {
-    throw "Millennium companion plugin file was not found at $pluginFile"
-  }
+Copy-Item -LiteralPath $source -Destination $destination -Recurse -Force
 
-  $targetFile = Join-Path $pluginDestination $relativePath
-  New-Item -ItemType Directory -Path (Split-Path -Parent $targetFile) -Force | Out-Null
-  Copy-Item -LiteralPath $pluginFile -Destination $targetFile -Force
-}
-
-$stream = [System.IO.File]::OpenRead($destination)
+$installedLauncher = Join-Path $destination "CSS Loader for Millennium Backend.exe"
+$stream = [System.IO.File]::OpenRead($installedLauncher)
 try {
   $sha256 = [System.Security.Cryptography.SHA256]::Create()
   try {
@@ -74,6 +61,5 @@ try {
 }
 
 $hash = -join ($hashBytes | ForEach-Object { $_.ToString("x2") })
-Write-Output "Bundled backend: $destination"
-Write-Output "SHA256: $hash"
-Write-Output "Bundled companion plugin: $pluginDestination"
+Write-Output "Bundled backend directory: $destination"
+Write-Output "Launcher SHA256: $hash"

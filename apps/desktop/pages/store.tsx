@@ -14,20 +14,33 @@ export default function Store() {
     function listener(event: any) {
       if (!allowedStoreOrigins.includes(event.origin)) return;
       if (event.data.action === "installTheme") {
-        downloadThemeFromUrl(event.data.payload).then(async (response) => {
-          const installResult = response.success ? response.result : undefined;
-          const installed = response.success && installResult?.success;
+        void (async () => {
+          try {
+            const response = await downloadThemeFromUrl(event.data.payload);
+            const installResult = response.success ? response.result : undefined;
+            const installed = response.success && installResult?.success;
 
-          if (installed) {
-            toast("Theme Installed");
-            storeRef.current?.contentWindow?.postMessage({ action: "themeInstalled" }, event.origin);
-          } else {
-            const message = installResult?.message || (!response.success ? response.result : "Unknown error");
+            if (installed) {
+              toast("Theme Installed");
+            } else {
+              const message =
+                installResult?.message || (!response.success ? response.result : "Unknown error");
+              toast("Theme Install Failed", message);
+            }
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
             toast("Theme Install Failed", message);
+          } finally {
+            storeRef.current?.contentWindow?.postMessage({ action: "themeInstalled" }, event.origin);
           }
 
-          await refreshThemes(true);
-        });
+          try {
+            await refreshThemes(true);
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            toast("Theme Refresh Failed", message);
+          }
+        })();
       }
       if (event.data.action === "tokenRedirect") {
         router.push("/settings");

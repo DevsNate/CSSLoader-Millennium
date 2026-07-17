@@ -29,7 +29,6 @@
         "removeFile": false,
         "renameFile": false,
         "scope": [
-          "$CONFIG\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*",
           "$APPDATA/standaloneVersion.txt",
           "$APPDATA",
           "$HOME/homebrew/themes/*"
@@ -119,15 +118,18 @@
         "signingIdentity": null
       },
       "resources": [
-        "resources/CSS Loader for Millennium Backend.exe",
-        "resources/css-loader-companion"
+        "resources/css-loader-backend"
       ],
       "shortDescription": "CSS Loader overlay compatibility for Millennium",
       "targets": ["msi"],
       "windows": {
         "certificateThumbprint": null,
         "digestAlgorithm": "sha256",
-        "timestampUrl": ""
+        "timestampUrl": "",
+        "wix": {
+          "bannerPath": "installer-assets/banner.bmp",
+          "dialogImagePath": "installer-assets/dialog.bmp"
+        }
       }
     },
     "security": {

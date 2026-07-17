@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="493" height="58" viewBox="0 0 493 58">
+  <defs>
+    <linearGradient id="accent" x1="0" y1="0" x2="493" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#a768ea"/>
+      <stop offset="0.55" stop-color="#6585ef"/>
+      <stop offset="1" stop-color="#0da5f5"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(425 57) rotate(-90) scale(54 130)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4d92f4" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#f8fafc" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="493" height="58" fill="#f8fafc"/>
+  <rect width="493" height="4" fill="url(#accent)"/>
+  <rect width="493" height="58" fill="url(#glow)"/>
+  <image href="../../../../docs/assets/css-loader-wordmark.svg" x="300" y="11" width="180" height="32" preserveAspectRatio="xMidYMid meet"/>
+  <rect y="57" width="493" height="1" fill="#d7dce5"/>
+</svg>
