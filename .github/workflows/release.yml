@@ -41,7 +41,7 @@ jobs:
           }
 
           $msi = $msis[0]
-          $releaseVersion = if ($env:GITHUB_REF_NAME -like "v*") { $env:GITHUB_REF_NAME } else { "v1.2.2" }
+          $releaseVersion = if ($env:GITHUB_REF_NAME -like "v*") { $env:GITHUB_REF_NAME } else { "v1.2.3" }
           $releasePath = Join-Path $bundleDir "CSS-Loader-for-Millennium_${releaseVersion}_x64_en-US.msi"
           Move-Item -LiteralPath $msi.FullName -Destination $releasePath -Force
           $msi = Get-Item -LiteralPath $releasePath

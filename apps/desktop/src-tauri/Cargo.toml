@@ -1,6 +1,6 @@
 [package]
 name = "css-loader-for-millennium"
-version = "1.2.2"
+version = "1.2.3"
 description = "Desktop theme manager and installer for CSS Loader on Millennium"
 authors = ["Nate and contributors"]
 license = "GPL-3.0-only"

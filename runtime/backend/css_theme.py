@@ -5,6 +5,7 @@ from css_inject import Inject, to_injects
 from css_utils import Result, Log, create_dir, USER
 from css_themepatch import ThemePatch
 from css_sfp_compat import is_folder_sfp_theme, convert_to_css_theme
+from css_catalog import resolve_theme_catalog
 
 CSS_LOADER_VER = 9
 
@@ -24,6 +25,8 @@ class Theme:
         self.priority_mod = 0
         self.created = None
         self.modified = path.getmtime(self.configJsonPath) if path.exists(self.configJsonPath) else None
+        self.catalog_scope = "all"
+        self.catalog_targets = []
 
         try:
             if os.path.exists(os.path.join(themePath, "PRIORITY")):
@@ -57,6 +60,7 @@ class Theme:
         self.name = json["name"]
         self.display_name = json["display_name"] if ("display_name" in json) else None
         self.id = json["id"] if ("id" in json) else self.name
+        self.catalog_scope, self.catalog_targets = resolve_theme_catalog(self.themePath, json)
         self.version = json["version"] if ("version" in json) else "v1.0"
         self.author = json["author"] if ("author" in json) else ""
         self.require = int(json["manifest_version"]) if ("manifest_version" in json) else 1

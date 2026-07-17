@@ -1,6 +1,7 @@
 import asyncio, json, tempfile, os, aiohttp, zipfile, shutil, ssl, certifi
 from css_utils import Result, Log, get_theme_path, store_or_file_config
 from css_theme import CSS_LOADER_VER, Theme
+from css_catalog import CATALOG_METADATA_FILE, SCOPE_OVERRIDE_FILE, cache_catalog_record
 
 async def run(command : str) -> str:
     proc = await asyncio.create_subprocess_shell(command,
@@ -57,6 +58,9 @@ async def install(id : str, base_url : str, local_themes : list) -> Result:
         return Result(False, str(e))
 
     tempDir.cleanup()
+    metadata_path = cache_catalog_record(data, get_theme_path())
+    if metadata_path is None:
+        Log(f"Could not associate catalog scope metadata with installed theme '{data.get('name', id)}'")
 
     if not store_or_file_config("no_deps_install"):
         for x in data["dependencies"]:
@@ -81,10 +85,16 @@ async def upload(theme : Theme, base_url : str, bearer_token : str) -> Result:
     url = f"{base_url}blobs"
 
     with tempfile.TemporaryDirectory() as tmp:
+        staging_path = os.path.join(tmp, "theme")
+        shutil.copytree(
+            theme.themePath,
+            staging_path,
+            ignore=shutil.ignore_patterns(CATALOG_METADATA_FILE, SCOPE_OVERRIDE_FILE),
+        )
         themePath = os.path.join(tmp, "theme.zip")
         print(themePath[:-4])
         print(theme.themePath)
-        shutil.make_archive(themePath[:-4], 'zip', theme.themePath)
+        shutil.make_archive(themePath[:-4], 'zip', staging_path)
 
         with open(themePath, "rb") as file:
             tls_context = ssl.create_default_context(cafile=certifi.where())

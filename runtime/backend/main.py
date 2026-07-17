@@ -9,6 +9,7 @@ from css_utils import Log, create_steam_symlink, Result, get_theme_path, store_r
 from css_inject import ALL_INJECTS, initialize_class_mappings
 from css_theme import CSS_LOADER_VER
 from css_remoteinstall import install
+from css_catalog import refresh_installed_catalog_metadata
 
 from css_server import start_server
 from css_browserhook import initialize
@@ -248,6 +249,8 @@ class Plugin:
         create_steam_symlink()
 
         self.loader = Loader()
+        if millennium_theme_mode:
+            await refresh_installed_catalog_metadata()
         await self.loader.load(False)
         if millennium_theme_mode:
             try:

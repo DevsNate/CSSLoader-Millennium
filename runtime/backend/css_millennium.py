@@ -257,6 +257,8 @@ def publish_millennium_runtime(
                         "matchType": target.match_type,
                         "matchValue": target.match_value,
                         "matchRegex": _legacy_match_regex(target),
+                        "scope": getattr(inject.theme, "catalog_scope", "all"),
+                        "catalogTargets": getattr(inject.theme, "catalog_targets", []),
                         "source": origin,
                         "css": css,
                     }

@@ -42,6 +42,30 @@ The publisher atomically writes `runtime-state.json` followed by a small
 content hashes match. The user's selected Millennium theme remains untouched,
 and CSS Loader's ordered style elements are layered over it.
 
+### Catalog target scopes
+
+DeckThemes keeps UI-mode categories such as `Desktop-Store` and `Store` in its
+catalog API rather than the downloaded `theme.json`. The backend caches that
+metadata beside each UUID-backed theme in `.css-loader-catalog.json` and
+publishes the resolved `desktop`, `gamepad`, or `all` scope with every runtime
+injection. Existing official themes are backfilled from the catalog on backend
+startup, and newly downloaded themes are cached during installation.
+
+Themes without catalog metadata preserve stock CSS Loader's unrestricted
+matching behavior. A manually installed theme can opt into an explicit mode by
+creating `.css-loader-scope.json` beside `theme.json` with one of:
+
+```json
+{ "scope": "desktop" }
+```
+
+```json
+{ "scope": "gamepad" }
+```
+
+`all` is also accepted and is the default. This separate override avoids
+modifying third-party theme manifests.
+
 ## Millennium companion
 
 The separately maintained
@@ -51,6 +75,11 @@ runtime. It reconciles individual `<style>` elements in Desktop and Big
 Picture, then does the same for Quick Access, Main Menu, and notification toasts
 through Millennium's per-plugin Chrome DevTools Protocol proxy because those
 targets live in isolated BrowserViews.
+
+The companion also tracks Steam's active UI mode. Catalog-scoped styles are
+removed and reapplied during Desktop/Gamepad transitions, preventing a
+`Desktop-Store` theme from styling Big Picture's Store BrowserView even though
+both pages use the same `store.steampowered.com` URL.
 
 This is not an external CDP setup: the project does not open port 8080, require
 Millennium `-dev` mode, or run a separate browser bridge. The generated runtime

@@ -122,7 +122,13 @@ class MillenniumCompilerTests(unittest.TestCase):
             theme_root = themes_root / "Target Theme"
             output_root = Path(temporary) / "output"
             theme_root.mkdir(parents=True)
-            theme = SimpleNamespace(enabled=True, name="Target Theme", themePath=str(theme_root))
+            theme = SimpleNamespace(
+                enabled=True,
+                name="Target Theme",
+                themePath=str(theme_root),
+                catalog_scope="desktop",
+                catalog_targets=["Desktop-Store"],
+            )
             inject = Inject(
                 "",
                 [
@@ -151,6 +157,10 @@ class MillenniumCompilerTests(unittest.TestCase):
             state = json.loads((output_root / STATE_FILE).read_text(encoding="utf-8"))
             self.assertEqual(state["protocolVersion"], 1)
             self.assertTrue(all("matchRegex" in item for item in state["injections"]))
+            self.assertTrue(all(item["scope"] == "desktop" for item in state["injections"]))
+            self.assertTrue(
+                all(item["catalogTargets"] == ["Desktop-Store"] for item in state["injections"])
+            )
             matches = {
                 (item["matchType"], item["matchValue"])
                 for item in state["injections"]
