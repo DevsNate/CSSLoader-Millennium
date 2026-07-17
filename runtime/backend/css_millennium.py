@@ -245,7 +245,7 @@ def compile_millennium_theme(
         "name": THEME_DISPLAY_NAME,
         "author": "CSS Loader contributors",
         "description": "Runtime state host for the CSS Loader Millennium companion.",
-        "version": "1.0.0",
+        "version": "1.1",
         "Patches": [],
     }
 

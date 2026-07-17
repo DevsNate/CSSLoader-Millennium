@@ -14,10 +14,19 @@ export default function Store() {
     function listener(event: any) {
       if (!allowedStoreOrigins.includes(event.origin)) return;
       if (event.data.action === "installTheme") {
-        downloadThemeFromUrl(event.data.payload).then(() => {
-          toast(`Theme Installed`);
-          refreshThemes(true);
-          storeRef.current?.contentWindow?.postMessage({ action: "themeInstalled" }, event.origin);
+        downloadThemeFromUrl(event.data.payload).then(async (response) => {
+          const installResult = response.success ? response.result : undefined;
+          const installed = response.success && installResult?.success;
+
+          if (installed) {
+            toast("Theme Installed");
+            storeRef.current?.contentWindow?.postMessage({ action: "themeInstalled" }, event.origin);
+          } else {
+            const message = installResult?.message || (!response.success ? response.result : "Unknown error");
+            toast("Theme Install Failed", message);
+          }
+
+          await refreshThemes(true);
         });
       }
       if (event.data.action === "tokenRedirect") {

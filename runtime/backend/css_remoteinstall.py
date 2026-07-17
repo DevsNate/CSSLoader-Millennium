@@ -63,7 +63,14 @@ async def install(id : str, base_url : str, local_themes : list) -> Result:
             if x["name"] in local_themes:
                 continue
 
-            await install(x["id"], base_url, local_themes)
+            dependency_result = await install(x["id"], base_url, local_themes)
+            if not dependency_result.success:
+                return Result(
+                    False,
+                    f"Installed '{data.get('name', id)}', but failed to install "
+                    f"dependency '{x['name']}': {dependency_result.message}",
+                )
+            local_themes.append(x["name"])
 
     return Result(True)
 

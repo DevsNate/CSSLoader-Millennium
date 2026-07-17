@@ -8,6 +8,8 @@ from css_remoteinstall import upload
 from asyncio import sleep
 from os import listdir, path, mkdir
 import json
+from pathlib import Path
+import shutil
 
 class Loader:
     def __init__(self):
@@ -39,6 +41,15 @@ class Loader:
 
         themesPath = get_theme_path()
         self.last_load_errors = await self._parse_themes(themesPath)
+
+        # Store-downloaded profiles can bundle image-picker assets inside the
+        # .profile directory while their dependency values retain the original
+        # destination path (for example, Static Background/custom.jpg). Restore
+        # those assets before dependency configs are loaded so the generated CSS
+        # variable does not silently fall back to the dependency's default image.
+        for theme in self.themes:
+            if FLAG_PRESET in theme.flags and self._profile_is_configured_active(theme):
+                self._restore_profile_assets(theme)
 
         self.scores = {}
         for x in self.themes:
@@ -243,6 +254,9 @@ class Loader:
             return Result(False)
 
         if set_deps:
+            if FLAG_PRESET in theme.flags:
+                self._restore_profile_assets(theme)
+
             theme_dependencies = [x for x in theme.dependencies]
             # Make the top level control all dependencies it defines
             ignore_dependencies_next = ignore_dependencies.copy()
@@ -278,6 +292,99 @@ class Loader:
 
         result = await theme.inject(inject_now)
         return result
+
+    def _restore_profile_assets(self, profile : Theme) -> list[str]:
+        """Restore missing image-picker assets bundled with a profile."""
+        profile_path = getattr(profile, "themePath", None)
+        if not profile_path:
+            return []
+
+        themes_root = Path(get_theme_path()).resolve()
+        profile_root = Path(profile_path).resolve()
+        restored = []
+
+        for dependency_name, patch_values in profile.dependencies.items():
+            dependency = next((x for x in self.themes if x.name == dependency_name), None)
+            if dependency is None or not isinstance(patch_values, dict):
+                continue
+
+            for patch_name, patch_value in patch_values.items():
+                if not isinstance(patch_value, dict):
+                    continue
+
+                component_values = patch_value.get("components")
+                if not isinstance(component_values, dict):
+                    continue
+
+                dependency_patch = next(
+                    (x for x in getattr(dependency, "patches", []) if x.name == patch_name),
+                    None,
+                )
+                if dependency_patch is None:
+                    continue
+
+                for component in dependency_patch.components:
+                    if component.type != "image-picker" or component.name not in component_values:
+                        continue
+
+                    value = component_values[component.name]
+                    if not isinstance(value, str):
+                        continue
+
+                    requested = Path(value.replace("\\", "/"))
+                    if requested.is_absolute() or ".." in requested.parts:
+                        Log(f"Refusing unsafe profile asset path '{value}'")
+                        continue
+
+                    target = (themes_root / requested).resolve()
+                    try:
+                        target.relative_to(themes_root)
+                    except ValueError:
+                        Log(f"Refusing profile asset outside themes root: '{value}'")
+                        continue
+
+                    if target.is_file():
+                        continue
+
+                    candidates = [profile_root / requested]
+                    if len(requested.parts) > 1 and requested.parts[0].casefold() == dependency_name.casefold():
+                        candidates.append(profile_root.joinpath(*requested.parts[1:]))
+
+                    source = None
+                    for candidate in candidates:
+                        candidate = candidate.resolve()
+                        try:
+                            candidate.relative_to(profile_root)
+                        except ValueError:
+                            continue
+                        if candidate.is_file():
+                            source = candidate
+                            break
+
+                    if source is None:
+                        continue
+
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(source, target)
+                    restored.append(requested.as_posix())
+                    Log(
+                        f"Restored profile asset '{requested.as_posix()}' "
+                        f"from '{profile.name}'"
+                    )
+
+        return restored
+
+    @staticmethod
+    def _profile_is_configured_active(profile : Theme) -> bool:
+        config_path = getattr(profile, "configJsonPath", None)
+        if not config_path or not path.isfile(config_path):
+            return False
+
+        try:
+            with open(config_path, "r", encoding="utf-8") as config_file:
+                return json.load(config_file).get("active") is True
+        except (OSError, ValueError, AttributeError):
+            return False
 
     async def _disable_theme(self, theme : Theme, keep_dependencies : bool, remove_now : bool = True) -> Result:
         if theme is None:
@@ -365,7 +472,7 @@ class Loader:
             try:
                 theme = None
                 if path.exists(themeDataPath):
-                    with open(themeDataPath, "r") as fp:
+                    with open(themeDataPath, "r", encoding="utf-8") as fp:
                         theme = json.load(fp)
 
                 themeData = Theme(themePath, theme, configPath)

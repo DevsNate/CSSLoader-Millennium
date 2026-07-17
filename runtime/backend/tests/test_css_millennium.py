@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 from css_millennium import (
     KNOWN_TARGETS,
@@ -222,6 +222,121 @@ class MillenniumCompilerTests(unittest.TestCase):
 
 
 class MillenniumProfileTests(unittest.IsolatedAsyncioTestCase):
+    async def test_profile_manifest_is_read_as_utf8(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            themes_root = Path(temporary) / "themes"
+            profile_root = themes_root / "Unicode.profile"
+            profile_root.mkdir(parents=True)
+            manifest = {
+                "display_name": "Unicode Ϗ Profile",
+                "name": "Unicode.profile",
+                "manifest_version": 9,
+                "flags": ["PRESET"],
+                "dependencies": {},
+            }
+            (profile_root / "theme.json").write_text(
+                json.dumps(manifest, ensure_ascii=False),
+                encoding="utf-8",
+            )
+
+            loader = Loader()
+            failures = await loader._parse_themes(str(themes_root))
+
+            self.assertEqual(failures, [])
+            self.assertEqual(len(loader.themes), 1)
+            self.assertEqual(loader.themes[0].display_name, "Unicode Ϗ Profile")
+
+    def test_only_configured_active_profiles_restore_assets_during_load(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            active_config = Path(temporary) / "active.json"
+            inactive_config = Path(temporary) / "inactive.json"
+            active_config.write_text('{"active": true}', encoding="utf-8")
+            inactive_config.write_text('{"active": false}', encoding="utf-8")
+
+            self.assertTrue(
+                Loader._profile_is_configured_active(
+                    SimpleNamespace(configJsonPath=str(active_config)),
+                ),
+            )
+            self.assertFalse(
+                Loader._profile_is_configured_active(
+                    SimpleNamespace(configJsonPath=str(inactive_config)),
+                ),
+            )
+
+    def test_profile_restores_bundled_dependency_image(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            themes_root = Path(temporary) / "themes"
+            profile_root = themes_root / "Switch Deck 2.profile"
+            dependency_root = themes_root / "Static Background"
+            profile_root.mkdir(parents=True)
+            dependency_root.mkdir(parents=True)
+            (profile_root / "7_1.jpg").write_bytes(b"profile background")
+
+            component = SimpleNamespace(name="Home Background", type="image-picker")
+            dependency_patch = SimpleNamespace(name="Home", components=[component])
+            dependency = FakeTheme("Static Background")
+            dependency.patches = [dependency_patch]
+            profile = FakeTheme(
+                "Switch Deck 2.profile",
+                dependencies={
+                    "Static Background": {
+                        "Home": {
+                            "value": "Yes",
+                            "components": {
+                                "Home Background": "Static Background/7_1.jpg",
+                            },
+                        },
+                    },
+                },
+                flags=[FLAG_PRESET],
+            )
+            profile.themePath = str(profile_root)
+
+            loader = Loader()
+            loader.themes = [dependency, profile]
+            with patch("css_loader.get_theme_path", return_value=str(themes_root)):
+                restored = loader._restore_profile_assets(profile)
+
+            self.assertEqual(restored, ["Static Background/7_1.jpg"])
+            self.assertEqual(
+                (dependency_root / "7_1.jpg").read_bytes(),
+                b"profile background",
+            )
+
+    def test_profile_asset_restore_rejects_parent_traversal(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            themes_root = Path(temporary) / "themes"
+            profile_root = themes_root / "Unsafe.profile"
+            profile_root.mkdir(parents=True)
+            (profile_root / "outside.jpg").write_bytes(b"unsafe")
+
+            component = SimpleNamespace(name="Background", type="image-picker")
+            dependency_patch = SimpleNamespace(name="Home", components=[component])
+            dependency = FakeTheme("Static Background")
+            dependency.patches = [dependency_patch]
+            profile = FakeTheme(
+                "Unsafe.profile",
+                dependencies={
+                    "Static Background": {
+                        "Home": {
+                            "value": "Yes",
+                            "components": {"Background": "../outside.jpg"},
+                        },
+                    },
+                },
+                flags=[FLAG_PRESET],
+            )
+            profile.themePath = str(profile_root)
+
+            loader = Loader()
+            loader.themes = [dependency, profile]
+            with patch("css_loader.get_theme_path", return_value=str(themes_root)):
+                restored = loader._restore_profile_assets(profile)
+
+            self.assertEqual(restored, [])
+            self.assertFalse((Path(temporary) / "outside.jpg").exists())
+
     async def test_profile_change_publishes_only_the_final_state(self):
         loader = Loader()
         loader.millennium_theme_mode = True

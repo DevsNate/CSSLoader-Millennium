@@ -13,7 +13,7 @@ if (-not $Python) {
 
 Push-Location $backendRoot
 try {
-  & $Python -m PyInstaller --noconfirm "CSS-Loader-for-Millennium-Backend.spec"
+  & $Python -m PyInstaller --noconfirm --clean "CSS-Loader-for-Millennium-Backend.spec"
   if ($LASTEXITCODE -ne 0) {
     throw "PyInstaller failed with exit code $LASTEXITCODE"
   }

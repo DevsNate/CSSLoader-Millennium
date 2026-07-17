@@ -1,12 +1,16 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from PyInstaller.utils.hooks import collect_all
+
+
+pil_datas, pil_binaries, pil_hiddenimports = collect_all('PIL')
 
 a = Analysis(
     ['main.py', 'css_win_tray.py'],
     pathex=[],
-    binaries=[],
-    datas=[('.\\assets', 'assets')],
-    hiddenimports=['psutil'],
+    binaries=pil_binaries,
+    datas=[('.\\assets', 'assets')] + pil_datas,
+    hiddenimports=['psutil'] + pil_hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

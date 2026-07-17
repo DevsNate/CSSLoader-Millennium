@@ -1,7 +1,15 @@
 import { server } from "./server";
-export function downloadThemeFromUrl(themeId: string): Promise<any> {
-  return server!.callPluginMethod("download_theme_from_url", {
-    id: themeId,
-    url: "https://api.deckthemes.com/",
-  });
+interface InstallResult {
+  success: boolean;
+  message: string;
+}
+
+export function downloadThemeFromUrl(themeId: string) {
+  return server!.callPluginMethod<{ id: string; url: string }, InstallResult>(
+    "download_theme_from_url",
+    {
+      id: themeId,
+      url: "https://api.deckthemes.com/",
+    }
+  );
 }

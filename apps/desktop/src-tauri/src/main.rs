@@ -21,19 +21,61 @@ const LEGACY_BACKEND_FILE_NAME: &str = "CssLoader-Standalone-Headless.exe";
 
 #[cfg(target_os = "windows")]
 use {
+    std::ffi::OsStr,
+    std::os::windows::ffi::OsStrExt,
     winapi::shared::minwindef::DWORD,
+    winapi::shared::winerror::ERROR_ALREADY_EXISTS,
+    winapi::um::errhandlingapi::GetLastError,
     winapi::um::handleapi::CloseHandle,
     winapi::um::processthreadsapi::{OpenProcess, TerminateProcess},
+    winapi::um::synchapi::CreateMutexW,
     winapi::um::tlhelp32::{
         CreateToolhelp32Snapshot, Process32First, Process32Next, PROCESSENTRY32,
     },
     winapi::um::winnt::{PROCESS_QUERY_INFORMATION, PROCESS_VM_READ},
+    winapi::um::winuser::{FindWindowW, SetForegroundWindow, ShowWindow, SW_RESTORE},
     winreg::enums::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE},
     winreg::RegKey,
 };
 
 #[cfg(target_os = "windows")]
+fn wide_null(value: &str) -> Vec<u16> {
+    OsStr::new(value).encode_wide().chain(Some(0)).collect()
+}
+
+#[cfg(target_os = "windows")]
+fn acquire_single_instance() -> Option<winapi::shared::ntdef::HANDLE> {
+    let mutex_name = wide_null("Local\\CSSLoaderForMillenniumDesktop");
+    let mutex = unsafe { CreateMutexW(ptr::null_mut(), 0, mutex_name.as_ptr()) };
+
+    if mutex.is_null() {
+        // Do not make a transient mutex failure prevent the app from opening.
+        return Some(mutex);
+    }
+
+    if unsafe { GetLastError() } == ERROR_ALREADY_EXISTS {
+        let window_title = wide_null("CSS Loader for Millennium");
+        let window = unsafe { FindWindowW(ptr::null(), window_title.as_ptr()) };
+        if !window.is_null() {
+            unsafe {
+                ShowWindow(window, SW_RESTORE);
+                SetForegroundWindow(window);
+            }
+        }
+        unsafe { CloseHandle(mutex) };
+        return None;
+    }
+
+    Some(mutex)
+}
+
+#[cfg(target_os = "windows")]
 fn main() {
+    let single_instance = match acquire_single_instance() {
+        Some(handle) => handle,
+        None => return,
+    };
+
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             download_template,
@@ -47,6 +89,10 @@ fn main() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+
+    if !single_instance.is_null() {
+        unsafe { CloseHandle(single_instance) };
+    }
 }
 
 #[cfg(target_os = "linux")]

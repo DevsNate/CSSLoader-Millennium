@@ -26,6 +26,27 @@ Loader loses the CDP injection path it requires when Millennium runs normally.
 > layer, normal Millennium and stock CSS Loader conflict over the external CDP
 > mechanism, so CSS Loader does not function correctly in the first place.
 
+## Version 1.1
+
+Version 1.1 is a reliability release based on the first public 1.0 testing
+cycle. It improves downloaded-profile compatibility, reports store failures
+accurately, hardens Windows packaging, and prevents duplicate desktop windows.
+
+### What's new in 1.1
+
+- Loads UTF-8 profile manifests and configuration values correctly on Windows,
+  including option labels that contain emoji or other non-ASCII characters.
+- Restores image-picker assets bundled inside downloaded profiles before their
+  dependency themes are activated, with traversal protection for unsafe paths.
+- Propagates dependency-download failures and shows the real install result in
+  the Store instead of displaying a false success message.
+- Bundles Pillow's native imaging components explicitly and performs clean
+  backend builds so stale PyInstaller analysis cannot produce a broken runtime.
+- Runs the desktop manager as a single instance; launching it again restores
+  and focuses the existing window.
+- Adds regression coverage for Unicode profiles, profile assets, unsafe asset
+  paths, and the complete post-install profile flow.
+
 ## Version 1.0
 
 Version 1.0 is the first stable release of the complete CSS Loader for

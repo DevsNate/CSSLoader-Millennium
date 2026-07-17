@@ -79,7 +79,7 @@ class Theme:
             return Result(True)
 
         try:
-            with open(self.configJsonPath, "r") as fp:
+            with open(self.configJsonPath, "r", encoding="utf-8") as fp:
                 config = json.load(fp)
         except Exception as e:
             return Result(False, str(e))
@@ -109,7 +109,7 @@ class Theme:
             for x in self.patches:
                 config[x.name] = x.get_value()
 
-            with open(self.configJsonPath, "w") as fp:
+            with open(self.configJsonPath, "w", encoding="utf-8") as fp:
                 json.dump(config, fp)
 
             self.modified = time.time()

@@ -24,10 +24,19 @@ $versions = [ordered]@{
 }
 
 $expected = $versions.root
-$mismatches = @($versions.GetEnumerator() | Where-Object { $_.Value -ne $expected })
+$packagingVersion = if (($expected -split '\.').Count -eq 2) { "$expected.0" } else { $expected }
+$expectedVersions = @{
+  root = $expected
+  desktop = $packagingVersion
+  cargo = $packagingVersion
+  companionPackage = $expected
+  companionManifest = $expected
+  generatedTheme = $expected
+}
+$mismatches = @($versions.GetEnumerator() | Where-Object { $_.Value -ne $expectedVersions[$_.Key] })
 if ($mismatches.Count -gt 0) {
   $details = ($versions.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ", "
   throw "CSS Loader component versions are not synchronized: $details"
 }
 
-Write-Output "All CSS Loader components use version $expected"
+Write-Output "CSS Loader release version is $expected (desktop packaging version $packagingVersion)"

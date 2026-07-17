@@ -48,32 +48,38 @@ jobs:
           }
 
           $msi = $msis[0]
-          $releaseName = $msi.Name -replace " ", "-"
-          if ($releaseName -ne $msi.Name) {
-            $releasePath = Join-Path $bundleDir $releaseName
-            Move-Item -LiteralPath $msi.FullName -Destination $releasePath
-            $msi = Get-Item -LiteralPath $releasePath
-          }
+          $releaseVersion = if ($env:GITHUB_REF_NAME -like "v*") { $env:GITHUB_REF_NAME } else { "v1.1" }
+          $releasePath = Join-Path $bundleDir "CSS-Loader-for-Millennium_${releaseVersion}_x64_en-US.msi"
+          Move-Item -LiteralPath $msi.FullName -Destination $releasePath -Force
+          $msi = Get-Item -LiteralPath $releasePath
 
-          $stream = [System.IO.File]::OpenRead($msi.FullName)
-          try {
-            $sha256 = [System.Security.Cryptography.SHA256]::Create()
+          $backendSource = "runtime/backend/dist/CSS Loader for Millennium Backend.exe"
+          $backendPath = Join-Path $bundleDir "CSS-Loader-for-Millennium-Backend_${releaseVersion}.exe"
+          Copy-Item -LiteralPath $backendSource -Destination $backendPath -Force
+          $backend = Get-Item -LiteralPath $backendPath
+
+          $checksumLines = foreach ($artifact in @($msi, $backend)) {
+            $stream = [System.IO.File]::OpenRead($artifact.FullName)
             try {
-              $hashBytes = $sha256.ComputeHash($stream)
+              $sha256 = [System.Security.Cryptography.SHA256]::Create()
+              try {
+                $hashBytes = $sha256.ComputeHash($stream)
+              } finally {
+                $sha256.Dispose()
+              }
             } finally {
-              $sha256.Dispose()
+              $stream.Dispose()
             }
-          } finally {
-            $stream.Dispose()
+            $checksum = -join ($hashBytes | ForEach-Object { $_.ToString("x2") })
+            "$checksum  $($artifact.Name)"
           }
-
-          $checksum = -join ($hashBytes | ForEach-Object { $_.ToString("x2") })
-          "$checksum  $($msi.Name)" | Set-Content -LiteralPath (Join-Path $bundleDir "SHA256SUMS.txt") -Encoding ascii
+          $checksumLines | Set-Content -LiteralPath (Join-Path $bundleDir "SHA256SUMS.txt") -Encoding ascii
       - uses: actions/upload-artifact@v7
         with:
           name: css-loader-for-millennium-msi
           path: |
             apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+            apps/desktop/src-tauri/target/release/bundle/msi/*.exe
             apps/desktop/src-tauri/target/release/bundle/msi/SHA256SUMS.txt
           if-no-files-found: error
       - name: Create draft tagged release
@@ -89,11 +95,16 @@ jobs:
           }
 
           $msi = $msis[0]
+          $backends = @(Get-ChildItem -LiteralPath $bundleDir -Filter "*.exe")
+          if ($backends.Count -ne 1) {
+            throw "Expected exactly one backend executable, found $($backends.Count)"
+          }
+          $backend = $backends[0]
           $checksum = Get-Item -LiteralPath (Join-Path $bundleDir "SHA256SUMS.txt")
           $notesPath = ".github/release-notes/$($env:GITHUB_REF_NAME).md"
           $arguments = @(
             "release", "create", $env:GITHUB_REF_NAME,
-            $msi.FullName,
+            $msi.FullName, $backend.FullName,
             $checksum.FullName,
             "--verify-tag",
             "--draft",
