@@ -103,6 +103,67 @@ class MillenniumCompilerTests(unittest.TestCase):
             [KNOWN_TARGETS["mainmenu"]],
         )
 
+    def test_cssloader_target_forms_preserve_their_match_semantics(self):
+        title_target = _target_for_tab(r"OverlayTab\d+_Find")
+        self.assertEqual(title_target.match_type, "title")
+        self.assertEqual(title_target.match_value, r"OverlayTab\d+_Find")
+
+        url_target = _target_for_tab("~https://store.steampowered.com~")
+        self.assertEqual(url_target.match_type, "url")
+        self.assertEqual(url_target.match_value, "https://store.steampowered.com")
+
+        class_target = _target_for_tab("!friendsui-container")
+        self.assertEqual(class_target.match_type, "class")
+        self.assertEqual(class_target.match_value, "friendsui-container")
+
+    def test_direct_state_serializes_title_url_and_class_targets(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            themes_root = Path(temporary) / "themes"
+            theme_root = themes_root / "Target Theme"
+            output_root = Path(temporary) / "output"
+            theme_root.mkdir(parents=True)
+            theme = SimpleNamespace(enabled=True, name="Target Theme", themePath=str(theme_root))
+            inject = Inject(
+                "",
+                [
+                    r"OverlayTab\d+_Find",
+                    "~https://store.steampowered.com~",
+                    "!friendsui-container",
+                ],
+                theme,
+            )
+            inject.css = ":root { --target-test: 1; }"
+            inject.activate()
+
+            previous_injects = list(ALL_INJECTS)
+            try:
+                ALL_INJECTS.clear()
+                ALL_INJECTS.append(inject)
+                publish_millennium_runtime(
+                    SimpleNamespace(themes=[theme]),
+                    output_root=output_root,
+                    themes_root=themes_root,
+                )
+            finally:
+                ALL_INJECTS.clear()
+                ALL_INJECTS.extend(previous_injects)
+
+            state = json.loads((output_root / STATE_FILE).read_text(encoding="utf-8"))
+            self.assertEqual(state["protocolVersion"], 1)
+            self.assertTrue(all("matchRegex" in item for item in state["injections"]))
+            matches = {
+                (item["matchType"], item["matchValue"])
+                for item in state["injections"]
+            }
+            self.assertEqual(
+                matches,
+                {
+                    ("title", r"OverlayTab\d+_Find"),
+                    ("url", "https://store.steampowered.com"),
+                    ("class", "friendsui-container"),
+                },
+            )
+
     def test_class_translation_matches_cssloader_behavior(self):
         CLASS_MAPPINGS.clear()
         CLASS_MAPPINGS["oldClass"] = "newClass"
@@ -144,6 +205,8 @@ class MillenniumCompilerTests(unittest.TestCase):
             state = json.loads((output_root / STATE_FILE).read_text(encoding="utf-8"))
             self.assertEqual(state["contentHash"], report["contentHash"])
             self.assertEqual(len(state["injections"]), 1)
+            self.assertEqual(state["injections"][0]["matchType"], "title")
+            self.assertEqual(state["injections"][0]["matchValue"], "Steam Big Picture Mode")
             self.assertIn("--obsidian-main-color: #111111", state["injections"][0]["css"])
             self.assertFalse((output_root / "skin.json").exists())
 

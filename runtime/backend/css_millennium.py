@@ -23,15 +23,16 @@ STATE_FILE = "runtime-state.json"
 @dataclass(frozen=True)
 class MillenniumTarget:
     key: str
-    match_regex: str
+    match_type: str
+    match_value: str
 
 
 KNOWN_TARGETS = {
-    "desktop": MillenniumTarget("desktop", r"^(Steam|SteamLibraryWindow)$"),
-    "bigpicture": MillenniumTarget("bigpicture", r"^Steam Big Picture Mode$"),
-    "mainmenu": MillenniumTarget("mainmenu", r"^MainMenu.*$"),
-    "quickaccess": MillenniumTarget("quickaccess", r"^QuickAccess.*$"),
-    "notifications": MillenniumTarget("notifications", r"^notificationtoasts.*$"),
+    "desktop": MillenniumTarget("desktop", "title", r"Steam|SteamLibraryWindow"),
+    "bigpicture": MillenniumTarget("bigpicture", "title", r"Steam Big Picture Mode"),
+    "mainmenu": MillenniumTarget("mainmenu", "title", r"MainMenu.*"),
+    "quickaccess": MillenniumTarget("quickaccess", "title", r"QuickAccess.*"),
+    "notifications": MillenniumTarget("notifications", "title", r"notificationtoasts.*"),
 }
 
 
@@ -72,19 +73,31 @@ def _target_for_tab(tab: str) -> MillenniumTarget:
         return KNOWN_TARGETS["notifications"]
 
     if tab.startswith("~") and tab.endswith("~") and len(tab) > 2:
-        match_regex = ".*" + re.escape(tab[1:-1]) + ".*"
+        match_type = "url"
+        match_value = tab[1:-1]
     elif tab.startswith("!"):
-        match_regex = ".*" + re.escape(tab[1:]) + ".*"
+        match_type = "class"
+        match_value = tab[1:]
     else:
-        match_regex = tab
+        match_type = "title"
+        match_value = tab
 
-    key = "custom-" + re.sub(r"[^a-z0-9]+", "-", tab.lower()).strip("-")
-    return MillenniumTarget(key or "custom", match_regex)
+    slug = re.sub(r"[^a-z0-9]+", "-", match_value.lower()).strip("-")
+    fingerprint = hashlib.sha256(f"{match_type}:{match_value}".encode("utf-8")).hexdigest()[:8]
+    key = f"custom-{match_type}-{slug or 'target'}-{fingerprint}"
+    return MillenniumTarget(key, match_type, match_value)
 
 
 def _targets_for_tab(tab: str) -> list[MillenniumTarget]:
     """Return the same document target used by Decky's CSS Loader."""
     return [_target_for_tab(tab)]
+
+
+def _legacy_match_regex(target: MillenniumTarget) -> str:
+    """Keep protocol-v1 companions useful while typed matching rolls out."""
+    if target.match_type == "title":
+        return f"^({target.match_value})$"
+    return ".*" + re.escape(target.match_value) + ".*"
 
 
 def _translate_classes(css: str) -> str:
@@ -241,14 +254,21 @@ def publish_millennium_runtime(
                     {
                         "id": injection_id,
                         "target": target.key,
-                        "matchRegex": target.match_regex,
+                        "matchType": target.match_type,
+                        "matchValue": target.match_value,
+                        "matchRegex": _legacy_match_regex(target),
                         "source": origin,
                         "css": css,
                     }
                 )
                 summary = target_report.setdefault(
                     target.key,
-                    {"match": target.match_regex, "injections": 0, "bytes": 0},
+                    {
+                        "matchType": target.match_type,
+                        "matchValue": target.match_value,
+                        "injections": 0,
+                        "bytes": 0,
+                    },
                 )
                 summary["injections"] += 1
                 summary["bytes"] += len(css.encode("utf-8"))
