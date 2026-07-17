@@ -18,8 +18,8 @@ Opening the desktop app performs one idempotent setup operation:
 3. Copy the bundled backend into the current user's Windows Startup folder.
 4. Install **CSS Loader Companion** into Millennium's plugin directory.
 5. Enable `css-loader-companion` while preserving the selected Millennium theme.
-6. Start the backend, fetch CSS class translations, and generate a valid empty
-   overlay when no themes have been installed yet.
+6. Start the backend, fetch CSS class translations, and publish a valid empty
+   direct runtime state when no themes have been installed yet.
 
 The first empty theme library normally contains only:
 
@@ -29,7 +29,7 @@ The first empty theme library normally contains only:
 The `STORE` configuration file is created when the user first saves a setting
 or profile.
 
-## Generated output
+## Runtime output
 
 The backend writes the user's current combination to:
 
@@ -37,14 +37,17 @@ The backend writes the user's current combination to:
 %STEAM%\millennium\themes\CSS Loader
 ```
 
-This directory is a local asset host. Its bundles, copied images, fonts, build
-report, and optional **CSS Loader (Standalone)** selector are generated from the
-current user's themes and settings. It is deliberately not distributed as a
-public Millennium theme.
+This directory is a local mailbox containing `runtime-state.json`, a matching
+build report, and a metadata-only `skin.json`. The state contains CSS Loader's
+resolved, ordered injects without bundle conversion or asset rewriting. It is
+deliberately not distributed as a public Millennium theme.
 
-Regeneration removes bundles and copied theme assets that are no longer part of
-the selected profile. The last valid build remains usable by the companion when
-the desktop app and backend are closed.
+Local images and fonts continue using CSS Loader's `/themes_custom/...` path.
+The backend links that path to the homebrew library when possible and otherwise
+mirrors active theme files into the existing custom directory.
+
+Republishing atomically replaces the previous state. The companion only accepts
+it when the state and report hashes match.
 
 ## Upgrade migration
 
@@ -55,7 +58,7 @@ Versions before 0.2.0 installed the plugin as `css-loader-runtime`. Setup now:
 3. removes the old plugin directory after the new files are in place;
 4. retains a one-time `config.json.css-loader-backup` beside Millennium's config.
 
-All theme downloads, profiles, patch values, and generated configuration remain
+All theme downloads, profiles, patch values, and runtime configuration remain
 in the user's theme library.
 
 ## Companion-first installation
@@ -63,4 +66,4 @@ in the user's theme library.
 If a user installs CSS Loader Companion from Millennium before installing the
 desktop app, the plugin waits safely and displays a link to the complete
 installer. Opening the desktop app completes setup and creates the user-specific
-generated output.
+runtime state.

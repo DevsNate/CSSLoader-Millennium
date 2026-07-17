@@ -73,7 +73,7 @@ class Loader:
             return Result(False, str(e))
 
     async def change_preset(self, name : str) -> Result:
-        """Apply a profile and publish the generated runtime exactly once."""
+        """Apply a profile and publish the direct runtime state exactly once."""
         await self.lock()
         try:
             preset = None
@@ -85,7 +85,7 @@ class Loader:
                     return Result(False, f"Theme {name} is not a profile")
 
             # Profile switching used to call set_theme_state concurrently for
-            # every enabled theme. Each call published an intermediate build,
+            # every enabled theme. Each call published an intermediate state,
             # including a zero-patch manifest that could make Millennium reload
             # before the selected profile had been enabled.
             for theme in self.themes:
