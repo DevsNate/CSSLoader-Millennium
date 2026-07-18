@@ -3,12 +3,14 @@
 CSS Loader for Millennium keeps CSS Loader's theme format and configuration
 model, but changes how the final styles reach Steam.
 
-The adapter is required because stock CSS Loader relies on an external CDP
-endpoint and creates Steam's `.cef-enable-remote-debugging` marker. Millennium
-removes that deprecated marker during its startup health/safety checks and only
-exposes an external debugging port in `-dev` mode. This project retains CSS
-Loader's theme/configuration behavior while replacing that incompatible
-injection path.
+The adapter is required because both stock CSS Loader and Millennium use
+Steam's CEF debugging interface through incompatible connection models.
+Millennium assigns its debugging interface a randomized port for its own
+runtime, while stock CSS Loader expects a stable external CDP endpoint that it
+can reconnect to and creates Steam's `.cef-enable-remote-debugging` marker to
+request that path. Stock CSS Loader cannot discover and follow Millennium's
+randomized port. This project retains CSS Loader's theme/configuration behavior
+while replacing that incompatible injection path.
 
 ```mermaid
 flowchart LR
