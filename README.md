@@ -10,15 +10,17 @@
   </p>
 </div>
 
+### Problem
 **CSS Loader itself—not its themes—is incompatible with Millennium's CDP
 runtime.** Both projects use Steam's CEF debugging interface, but they use it
 differently. Millennium starts its debugging interface on a randomized port
 that stock CSS Loader cannot discover and follow. Stock CSS Loader instead
 expects its own stable, externally reachable Chrome DevTools Protocol (CDP)
 endpoint and creates Steam's `.cef-enable-remote-debugging` marker to request
-that path.
-Running Millennium does not give stock CSS Loader the stable CDP
+that path. Running Millennium normally does not give stock CSS Loader the stable CDP
 connection it expects. 
+
+### Solution
 CSS Loader for Millennium solves this by avoiding the randomized-port connection entirely. The modified backend resolves themes and publishes their runtime state to the companion plugin, which runs inside Millennium and applies the styles through Millennium’s controlled interfaces—preserving CSS Loader’s native themes, profiles, and configuration model.
 
 > [!NOTE]
