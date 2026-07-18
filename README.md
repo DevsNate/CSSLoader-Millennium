@@ -19,8 +19,7 @@ endpoint and creates Steam's `.cef-enable-remote-debugging` marker to request
 that path.
 
 Consequently, running Millennium does not give stock CSS Loader the stable CDP
-connection it expects. This project bridges that architectural mismatch rather
-than attempting to reuse Millennium's randomized private port.
+connection it expects. CSS Loader for Millennium solves this by avoiding the randomized-port connection entirely. The modified backend resolves themes and publishes their runtime state to the companion plugin, which runs inside Millennium and applies the styles through Millennium’s controlled interfaces—preserving CSS Loader’s native themes, profiles, and configuration model.
 
 > [!NOTE]
 > This is not merely a fix for delayed theme loading. Without a compatibility
