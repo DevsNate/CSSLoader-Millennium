@@ -68,11 +68,11 @@ not the entire purpose of the project. The compatibility runtime persists the
 latest resolved injection state on disk, and its companion starts as part of
 Millennium instead of waiting for an external standalone CDP connection.
 
-## Highlights
+## Additional Highlights
 
 - Replaces CSS Loader's external CDP injection path with ordered, direct style
   injection inside Millennium.
-- Requires neither Millennium `-dev` mode nor `.cef-enable-remote-debugging`.
+- Live visual change updates without needing a steam reload/restart.
 - Uses existing themes from `~/homebrew/themes`; no manual conversion required.
 - Preserves profiles, dependencies, patch options, colors, CSS variables, local
   images/fonts, class translations, and CSS cascade order.
