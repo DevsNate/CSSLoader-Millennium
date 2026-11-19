@@ -1,0 +1,29 @@
+{
+  "type": "module",
+  "name": "css-loader-millennium",
+  "version": "1.0",
+  "description": "Loads DeckThemes CSS Loader themes into Steam's desktop and Big Picture windows.",
+  "author": "DevsNate",
+  "license": "GPL-3.0-or-later",
+  "upstream": {
+    "repository": "https://github.com/DeckThemes/SDH-CssLoader",
+    "version": "2.1.3",
+    "commit": "295150180e278fac6c3f45e2295f1ff1f28f92f8"
+  },
+  "scripts": {
+    "dev": "starlight watch",
+    "build": "node -e \"require('fs').mkdirSync('dist',{recursive:true})\" && starlight pack --release && node scripts/checks/starlight-bundle.mjs",
+    "vendor": "node scripts/vendor.mjs",
+    "check": "node scripts/run-checks.mjs",
+    "sync-upstream": "node scripts/sync-upstream.mjs"
+  },
+  "devDependencies": {
+    "@steambrew/starlight": "^1.1.7",
+    "@types/react": "19.1.1",
+    "@types/react-dom": "19.1.1",
+    "fengari": "0.1.5",
+    "react-fast-compare": "^3.2.2",
+    "react-icons": "4.12.0",
+    "typescript": "^5.9.3"
+  }
+}

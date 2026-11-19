@@ -1,0 +1,16 @@
+[plugin]
+id = "css-loader"
+name = "CSS Loader"
+version = "1.0"
+author = "DevsNate"
+description = "Loads DeckThemes CSS Loader themes into Steam's desktop and Big Picture windows."
+
+[backend]
+entry = "backend/main.lua"
+sources = ["backend/**/*.lua"]
+
+[frontend]
+entry = "frontend/index.tsx"
+
+[compiler]
+output_path = "dist/css-loader.star"

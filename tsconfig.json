@@ -1,0 +1,58 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2022"
+    ],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "noImplicitAny": false,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "millennium": [
+        "./.millennium/lsp/ts"
+      ],
+      "decky-frontend-lib": [
+        "./frontend/shims/decky-frontend-lib"
+      ],
+      "lodash": [
+        "./frontend/shims/lodash"
+      ],
+      "color": [
+        "./frontend/shims/color"
+      ],
+      "url": [
+        "./frontend/shims/url"
+      ],
+      "react-fast-compare": [
+        "./frontend/vendor/react-fast-compare"
+      ],
+      "react-icons": [
+        "./frontend/vendor/react-icons"
+      ],
+      "react-icons/*": [
+        "./frontend/vendor/react-icons/*"
+      ]
+    },
+    "typeRoots": [
+      "./.millennium/types",
+      "./node_modules/@types"
+    ]
+  },
+  "include": [
+    "frontend",
+    "src"
+  ]
+}
